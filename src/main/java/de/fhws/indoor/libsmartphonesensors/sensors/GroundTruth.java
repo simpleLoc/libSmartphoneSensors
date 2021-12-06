@@ -3,6 +3,8 @@ package de.fhws.indoor.libsmartphonesensors.sensors;
 import android.app.Activity;
 import android.os.SystemClock;
 
+import de.fhws.indoor.libsmartphonesensors.ASensor;
+
 /**
  * Virtual Ground-Truth sensor
  * <p>
@@ -10,7 +12,7 @@ import android.os.SystemClock;
  * </p>
  * @author Toni Fetzer
  */
-public class GroundTruth extends mySensor {
+public class GroundTruth extends ASensor {
 
     public GroundTruth(final Activity act){
         //empty as my soul

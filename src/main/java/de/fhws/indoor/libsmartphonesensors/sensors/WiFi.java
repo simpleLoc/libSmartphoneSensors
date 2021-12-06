@@ -5,6 +5,7 @@ import android.net.wifi.ScanResult;
 
 import java.util.List;
 
+import de.fhws.indoor.libsmartphonesensors.ASensor;
 import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
 
 
@@ -12,7 +13,7 @@ import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
  * Wifi sensor exporting scan/advertisement events.
  * @author Markus Ebner
  */
-public class WiFi extends mySensor implements WifiScanProvider.WifiScanCallback {
+public class WiFi extends ASensor implements WifiScanProvider.WifiScanCallback {
 
 	private final WifiScanProvider wifiScanProvider;
 

@@ -9,7 +9,6 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -17,6 +16,7 @@ import androidx.annotation.NonNull;
 
 import java.util.UUID;
 
+import de.fhws.indoor.libsmartphonesensors.ASensor;
 import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.callback.profile.ProfileDataCallback;
 import no.nordicsemi.android.ble.data.Data;
@@ -25,11 +25,15 @@ import no.nordicsemi.android.ble.data.Data;
  * Decawave UWB DWM1000 module readout via BLE.
  * @author Markus Bullmann
  */
-public class DecawaveUWB extends mySensor {
+public class DecawaveUWB extends ASensor {
 
     private boolean currentlyConnecting = false;
     private boolean connectedToTag = false;
-    private String tagMacAddress = null;
+    private Config config = null;
+
+    public static class Config {
+        public String tagMacAddress;
+    };
 
     private static class BleDataStream {
         private final Data _data;
@@ -245,8 +249,8 @@ public class DecawaveUWB extends mySensor {
     private final BluetoothAdapter bluetoothAdapter;
     private final DecawaveManager decaManager;
 
-    public DecawaveUWB(final Activity act, String tagMacAddress) {
-        this.tagMacAddress = tagMacAddress;
+    public DecawaveUWB(final Activity act, Config config) {
+        this.config = config;
         BluetoothManager bluetoothManager = (BluetoothManager) act.getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
 
@@ -262,8 +266,7 @@ public class DecawaveUWB extends mySensor {
     @Override
     public void onResume(Activity act) {
         if (bluetoothAdapter != null) {
-            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(tagMacAddress);
-
+            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(config.tagMacAddress);
             decaManager.connectToDevice(device);
         }
     }

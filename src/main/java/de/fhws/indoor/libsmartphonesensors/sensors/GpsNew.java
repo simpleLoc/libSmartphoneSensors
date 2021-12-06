@@ -1,17 +1,14 @@
 package de.fhws.indoor.libsmartphonesensors.sensors;
 
-import static android.content.ContentValues.TAG;
-
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
-import android.util.Log;
-
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
+import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -24,11 +21,15 @@ import com.google.android.gms.location.LocationServices;
 import java.text.DateFormat;
 import java.util.Date;
 
+import static android.content.ContentValues.TAG;
+
+import de.fhws.indoor.libsmartphonesensors.ASensor;
+
 /**
  * Created by student on 21.03.17.
  */
 
-public class GpsNew extends mySensor implements ConnectionCallbacks, OnConnectionFailedListener, LocationListener {
+public class GpsNew extends ASensor implements ConnectionCallbacks, OnConnectionFailedListener, LocationListener {
 
     protected GoogleApiClient mGoogleApiClient;
     protected Location mLastLocation;
@@ -65,7 +66,6 @@ public class GpsNew extends mySensor implements ConnectionCallbacks, OnConnectio
     /**
      * Sets up the location request.
      */
-    @SuppressLint("RestrictedApi")
     protected void createLocationRequest() {
         mLocationRequest = new LocationRequest();
 

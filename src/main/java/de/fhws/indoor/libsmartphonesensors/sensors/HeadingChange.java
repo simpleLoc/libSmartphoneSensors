@@ -7,6 +7,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
+import de.fhws.indoor.libsmartphonesensors.ASensor;
 import de.fhws.indoor.libsmartphonesensors.math.MadgwickFilter;
 import de.fhws.indoor.libsmartphonesensors.math.Vec3;
 
@@ -16,7 +17,7 @@ import de.fhws.indoor.libsmartphonesensors.math.Vec3;
  * a MadgwickFilter to estimate and undo the smartphone orientation).
  * @author Markus Ebner
  */
-public class HeadingChange extends mySensor implements SensorEventListener {
+public class HeadingChange extends ASensor implements SensorEventListener {
 
     private SensorManager sensorManager;
     private Sensor accelerometerSensor;

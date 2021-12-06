@@ -10,14 +10,15 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-
 import androidx.core.content.ContextCompat;
+
+import de.fhws.indoor.libsmartphonesensors.ASensor;
 
 /**
  * GPS sensor.
  */
 @TargetApi(23)
-public class Gps extends mySensor implements LocationListener {
+public class Gps extends ASensor implements LocationListener {
 
     private Activity act;
     private LocationManager locationManager;
@@ -47,7 +48,7 @@ public class Gps extends mySensor implements LocationListener {
 
                 //get the most accurate provider
                 Criteria criteria = new Criteria();
-                criteria.setAccuracy(Criteria.ACCURACY_HIGH);
+                criteria.setAccuracy(Criteria.ACCURACY_FINE);
                 String provider = locationManager.getBestProvider(criteria, true);
 
                 //use only gps and not network 0 and 0 for fastest updates possible
@@ -62,6 +63,7 @@ public class Gps extends mySensor implements LocationListener {
             }
         } catch (Exception ex)  {
             throw new Exception("error creating gps!");
+
         }
     }
 

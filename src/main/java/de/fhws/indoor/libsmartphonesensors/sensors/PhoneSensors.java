@@ -13,6 +13,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import de.fhws.indoor.libsmartphonesensors.ASensor;
+
 /**
  * Sensor that surfaces all Sensors a phone has.
  * <p>
@@ -25,7 +27,7 @@ import java.io.IOException;
  *
  * Created by Toni on 25.03.2015.
  */
-public class PhoneSensors extends mySensor implements SensorEventListener {
+public class PhoneSensors extends ASensor implements SensorEventListener {
 
 	//private static final int SENSOR_TYPE_HEARTRATE = 65562;
 
@@ -53,7 +55,6 @@ public class PhoneSensors extends mySensor implements SensorEventListener {
 
 	/** ctor */
     public PhoneSensors(final Activity act){
-
 		// fetch the sensor manager from the activity
         sensorManager = (SensorManager) act.getSystemService(Context.SENSOR_SERVICE);
 
@@ -77,16 +78,14 @@ public class PhoneSensors extends mySensor implements SensorEventListener {
 	final char NL = '\n';
 
 	/** Write Vendors to file */
-	public void dumpVendors(final Activity act, File file) {
-
+	public void dumpVendors(File vendorFile) {
 		try {
-
-			final FileOutputStream fos = new FileOutputStream(file);
+			final FileOutputStream fos = new FileOutputStream(vendorFile);
 			final StringBuilder sb = new StringBuilder();
 
 			// constructor smartphone details
 			sb.append("[Device]").append(NL);
-			sb.append("\tModel: " + Build.MODEL).append(NL);
+			sb.append("\tModel: " + android.os.Build.MODEL).append(NL);
 			sb.append("\tAndroid: " + Build.VERSION.RELEASE).append(NL);
 			sb.append(NL);
 
@@ -109,10 +108,9 @@ public class PhoneSensors extends mySensor implements SensorEventListener {
 			fos.write(sb.toString().getBytes());
 			fos.close();
 
-		}catch (final IOException e) {
+		} catch (final IOException e) {
 			throw new RuntimeException(e);
 		}
-
 	}
 
 	/** dump all details of the given sensor into the provided stringbuilder */

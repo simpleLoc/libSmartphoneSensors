@@ -17,11 +17,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import de.fhws.indoor.libsmartphonesensors.ASensor;
+
 /**
  * Bluetooth Eddystone sensor.
  * @author Markus Ebner
  */
-public class EddystoneUIDBeacon extends mySensor {
+public class EddystoneUIDBeacon extends ASensor {
 
     private static final ParcelUuid EDDYSTONE_UUID = ParcelUuid.fromString("0000feaa-0000-1000-8000-00805f9b34fb");
 
@@ -79,7 +81,7 @@ public class EddystoneUIDBeacon extends mySensor {
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build();
         bleScanCallback = new ScanCallback() {
-            @Override public void onScanResult(int callbackType, ScanResult scanResult) {
+            @Override public void onScanResult(int callbackType, android.bluetooth.le.ScanResult scanResult) {
                 byte[] payload = scanResult.getScanRecord().getBytes();
                 if(payload.length > 9) {
                     // Check whether the Eddystone-Frame we got is a EddystoneUID frame (instead of: TLM, EID, URL, ...)

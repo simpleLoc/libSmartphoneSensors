@@ -1,6 +1,5 @@
 package de.fhws.indoor.libsmartphonesensors.sensors;
 
-
 /**
  * Created by toni on 02/06/16.
  */

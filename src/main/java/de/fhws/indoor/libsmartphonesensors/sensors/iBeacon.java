@@ -15,11 +15,13 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.fhws.indoor.libsmartphonesensors.ASensor;
+
 /**
  * Bluetooth iBeacon sensor.
  * @author Frank Ebner
  */
-public class iBeacon extends mySensor {
+public class iBeacon extends ASensor {
 
 	private BluetoothAdapter bt;
 	private BluetoothLeScanner scanner;

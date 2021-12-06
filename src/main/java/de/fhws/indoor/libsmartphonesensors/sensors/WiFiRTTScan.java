@@ -2,10 +2,14 @@ package de.fhws.indoor.libsmartphonesensors.sensors;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.MacAddress;
 import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
 import android.net.wifi.rtt.RangingRequest;
 import android.net.wifi.rtt.RangingResult;
 import android.net.wifi.rtt.RangingResultCallback;
@@ -16,13 +20,16 @@ import android.util.Log;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
+import de.fhws.indoor.libsmartphonesensors.ASensor;
 import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
 
 /**
@@ -30,7 +37,7 @@ import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
  * @author Steffen Kastner
  * @author Markus Ebner
  */
-public class WiFiRTTScan extends mySensor implements WifiScanProvider.WifiScanCallback {
+public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCallback {
     private final String TAG = "WiFiRTTScan";
 
     private final Activity activity;
@@ -50,7 +57,7 @@ public class WiFiRTTScan extends mySensor implements WifiScanProvider.WifiScanCa
     }
     private final RangingResultCallback rangeCallback;
 
-    private final HashMap<String, ScanResult> rttEnabledAPs = new HashMap<>();
+    private final ConcurrentHashMap<String, ScanResult> rttEnabledAPs = new ConcurrentHashMap<>();
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     public WiFiRTTScan(Activity activity, WifiScanProvider wifiScanProvider) {
@@ -89,7 +96,6 @@ public class WiFiRTTScan extends mySensor implements WifiScanProvider.WifiScanCa
     private void startRanging() {
         if (rttEnabledAPs.isEmpty())
             return;
-
 
         LinkedList<RangingRequest.Builder> builders = new LinkedList<>();
         builders.add(new RangingRequest.Builder());
