@@ -5,7 +5,7 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
+
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import android.util.Log;
@@ -24,6 +24,7 @@ import java.util.Date;
 import static android.content.ContentValues.TAG;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorType;
 
 /**
  * Created by student on 21.03.17.

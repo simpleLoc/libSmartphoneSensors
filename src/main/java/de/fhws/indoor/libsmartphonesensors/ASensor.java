@@ -2,19 +2,16 @@ package de.fhws.indoor.libsmartphonesensors;
 
 import android.app.Activity;
 
-import de.fhws.indoor.libsmartphonesensors.sensors.SensorType;
-
 /**
  * Base-class for all Sensors
  *
  * @author Frank Ebner
+ * @author Markus Ebner
  */
 public abstract class ASensor {
 
 	/** listen for sensor events */
 	public interface SensorListener {
-
-		public void onData(final long timestamp, final String csv);
 
 		/** received data from the given sensor */
         public void onData(final SensorType id, final long timestamp, final String csv);

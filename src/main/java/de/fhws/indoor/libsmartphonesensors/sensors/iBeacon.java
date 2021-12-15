@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorType;
 
 /**
  * Bluetooth iBeacon sensor.
@@ -59,7 +60,7 @@ public class iBeacon extends ASensor {
 			@Override public void onScanResult(int callbackType, android.bluetooth.le.ScanResult result) {
 				//Log.d("BT", device + " " + rssi);
 				if (listener != null) {
-					listener.onData(result.getTimestampNanos(), Helper.stripMAC(result.getDevice().getAddress()) + ";" + result.getRssi() + ";" + result.getScanRecord().getTxPowerLevel());
+					listener.onData(SensorType.IBEACON, result.getTimestampNanos(), Helper.stripMAC(result.getDevice().getAddress()) + ";" + result.getRssi() + ";" + result.getScanRecord().getTxPowerLevel());
 				}
 			}
 		};

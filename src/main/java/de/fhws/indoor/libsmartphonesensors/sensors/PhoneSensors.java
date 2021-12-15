@@ -14,6 +14,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorType;
 
 /**
  * Sensor that surfaces all Sensors a phone has.
@@ -45,7 +46,6 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 	private Sensor light;
 	private Sensor temperature;
 	private Sensor gameRotationVector;
-	private Sensor stepDetector;
 
 	/** local gravity copy (needed for orientation matrix) */
     private float[] mGravity = new float[3];
@@ -72,7 +72,6 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 		light = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
 		temperature = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
 		gameRotationVector = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
-		stepDetector = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
 	}
 
 	final char NL = '\n';
@@ -102,7 +101,6 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 			dumpSensor(sb, SensorType.AMBIENT_TEMPERATURE, temperature);
 			//dumpSensor(sb, SensorType.HEART_RATE, heart);
 			dumpSensor(sb, SensorType.GAME_ROTATION_VECTOR, gameRotationVector);
-			dumpSensor(sb, SensorType.STEP_DETECTOR, stepDetector);
 
 			// write
 			fos.write(sb.toString().getBytes());
@@ -249,9 +247,6 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 							Float.toString(event.values[1]) + ";" +
 							Float.toString(event.values[2])
 			);
-		} else if(event.sensor.getType() == Sensor.TYPE_STEP_DETECTOR) {
-        	//inform listeners
-			listener.onData(SensorType.STEP_DETECTOR, event.timestamp, "1.0");
 		}
     }
 
@@ -344,7 +339,6 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 		registerIfPresent(light, SensorManager.SENSOR_DELAY_FASTEST);
 		registerIfPresent(temperature, SensorManager.SENSOR_DELAY_FASTEST);
 		registerIfPresent(gameRotationVector, SensorManager.SENSOR_DELAY_FASTEST);
-		registerIfPresent(stepDetector, SensorManager.SENSOR_DELAY_FASTEST);
     }
 
 	private void registerIfPresent(final Sensor sens, final int delay) {

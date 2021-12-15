@@ -13,6 +13,7 @@ import android.os.Bundle;
 import androidx.core.content.ContextCompat;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorType;
 
 /**
  * GPS sensor.

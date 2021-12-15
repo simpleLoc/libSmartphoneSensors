@@ -1,4 +1,4 @@
-package de.fhws.indoor.libsmartphonesensors.sensors;
+package de.fhws.indoor.libsmartphonesensors;
 
 /**
  * Enum mapping all supported events in the logfile to their corresponding ids.

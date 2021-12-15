@@ -8,6 +8,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.math.MadgwickFilter;
 import de.fhws.indoor.libsmartphonesensors.math.Vec3;
 
@@ -58,7 +59,7 @@ public class HeadingChange extends ASensor implements SensorEventListener {
                 Vec3 alignedGyro = madgwickFilter.getQuaternion().transformVector(lastGyro);
                 double headingChange = alignedGyro.z * timeStepFactor;
                 if(this.listener != null) {
-                    this.listener.onData(event.timestamp, Double.toString(headingChange));
+                    this.listener.onData(SensorType.HEADING_CHANGE, event.timestamp, Double.toString(headingChange));
                 }
             }
             lastUpdateTs = event.timestamp;

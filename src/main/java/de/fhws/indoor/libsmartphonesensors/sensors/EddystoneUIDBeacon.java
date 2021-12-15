@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorType;
 
 /**
  * Bluetooth Eddystone sensor.
@@ -122,7 +123,7 @@ public class EddystoneUIDBeacon extends ASensor {
 
         // For EddystoneUID layout, see: https://github.com/google/eddystone/tree/master/eddystone-uid
         if(listener != null) {
-            listener.onData(advertisement.getTimestampNanos(), Helper.stripMAC(advertisement.getDevice().getAddress()) + ";"
+            listener.onData(SensorType.EDDYSTONE_UID, advertisement.getTimestampNanos(), Helper.stripMAC(advertisement.getDevice().getAddress()) + ";"
                     + advertisement.getRssi() + ";"
                     + advertisement.getScanRecord().getTxPowerLevel() + ";"
                     + uuid.toString());

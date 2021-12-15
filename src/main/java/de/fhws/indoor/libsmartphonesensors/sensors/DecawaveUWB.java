@@ -17,6 +17,7 @@ import androidx.annotation.NonNull;
 import java.util.UUID;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorType;
 import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.callback.profile.ProfileDataCallback;
 import no.nordicsemi.android.ble.data.Data;

@@ -6,6 +6,7 @@ import android.net.wifi.ScanResult;
 import java.util.List;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
 
 
@@ -38,7 +39,7 @@ public class WiFi extends ASensor implements WifiScanProvider.WifiScanCallback {
 			sb.append(Helper.stripMAC(sr.BSSID)).append(';');
 			sb.append(sr.frequency).append(';');
 			sb.append(sr.level);
-			listener.onData(sr.timestamp * 1000, sb.toString());
+			listener.onData(SensorType.WIFI, sr.timestamp * 1000, sb.toString());
 			sb.setLength(0);
 		}
 	}

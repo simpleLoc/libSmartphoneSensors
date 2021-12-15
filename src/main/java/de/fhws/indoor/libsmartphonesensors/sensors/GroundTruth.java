@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.os.SystemClock;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorType;
 
 /**
  * Virtual Ground-Truth sensor
