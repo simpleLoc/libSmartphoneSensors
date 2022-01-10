@@ -61,8 +61,6 @@ public class StepDetector extends ASensor implements SensorEventListener {
         this.sensorManager = (SensorManager) activity.getSystemService(Context.SENSOR_SERVICE);
         this.gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         this.accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        this.sensorManager.registerListener(this, this.accelerometerSensor, (int)SENSOR_SAMPLE_INTERVAL_US);
-        this.sensorManager.registerListener(this, this.gravitySensor, (int)SENSOR_SAMPLE_INTERVAL_US);
     }
 
     // ###########
