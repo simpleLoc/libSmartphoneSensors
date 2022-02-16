@@ -20,6 +20,7 @@ import com.google.android.gms.location.LocationServices;
 
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static android.content.ContentValues.TAG;
 
@@ -32,6 +33,7 @@ import de.fhws.indoor.libsmartphonesensors.SensorType;
 
 public class GpsNew extends ASensor implements ConnectionCallbacks, OnConnectionFailedListener, LocationListener {
 
+    private AtomicBoolean running = new AtomicBoolean(false);
     protected GoogleApiClient mGoogleApiClient;
     protected Location mLastLocation;
     private Activity act;
@@ -111,6 +113,7 @@ public class GpsNew extends ASensor implements ConnectionCallbacks, OnConnection
 
     @Override
     public void onResume(Activity act) {
+        running.set(true);
         if (mGoogleApiClient.isConnected() && mRequestingLocationUpdates) {
             startLocationUpdates();
         }
@@ -118,6 +121,7 @@ public class GpsNew extends ASensor implements ConnectionCallbacks, OnConnection
 
     @Override
     public void onPause(Activity act) {
+        running.set(false);
         if (mGoogleApiClient.isConnected()) {
             stopLocationUpdates();
         }
@@ -164,18 +168,19 @@ public class GpsNew extends ASensor implements ConnectionCallbacks, OnConnection
 
     @Override
     public void onLocationChanged(Location location) {
-        this.mCurrentLocation = location;
-        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+        if(running.get()) {
+            this.mCurrentLocation = location;
+            mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
 
-        // inform listeners
-        if (listener != null){
-            listener.onData(SensorType.GRAVITY, location.getElapsedRealtimeNanos(), //TODO: Is this correct? SystemClock.elapsedRealtimeNanos() otherwise..
-                    Double.toString(location.getLatitude()) + ";" +
-                            Double.toString(location.getLongitude()) + ";" +
-                            Double.toString(location.getAltitude()) + ";" +
-                            Double.toString(location.getBearing())
-            );
+            // inform listeners
+            if (listener != null){
+                listener.onData(SensorType.GPS, location.getElapsedRealtimeNanos(), //TODO: Is this correct? SystemClock.elapsedRealtimeNanos() otherwise..
+                        Double.toString(location.getLatitude()) + ";" +
+                                Double.toString(location.getLongitude()) + ";" +
+                                Double.toString(location.getAltitude()) + ";" +
+                                Double.toString(location.getBearing())
+                );
+            }
         }
-
     }
 }
