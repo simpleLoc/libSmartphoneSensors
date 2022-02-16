@@ -15,6 +15,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
@@ -28,8 +29,10 @@ import no.nordicsemi.android.ble.data.Data;
  */
 public class DecawaveUWB extends ASensor {
 
-    private boolean currentlyConnecting = false;
-    private boolean connectedToTag = false;
+    private boolean running = false;
+    private Object lifecycleMutex = new Object();
+    private AtomicBoolean currentlyConnecting = new AtomicBoolean(false);
+    private AtomicBoolean connectedToTag = new AtomicBoolean(false);
     private Config config = null;
 
     public static class Config {
@@ -113,6 +116,7 @@ public class DecawaveUWB extends ASensor {
 
         private BluetoothGattCharacteristic _locationDataCharacteristic;
         private BluetoothGattCharacteristic _locationModeCharacteristic;
+        private BluetoothDevice currentDevice = null;
 
         public DecawaveManager(@NonNull final Context context)
         {
@@ -124,14 +128,18 @@ public class DecawaveUWB extends ASensor {
             // Log.println(priority, TAG, message);
         }
 
-        public void connectToDevice(BluetoothDevice device)
-        {
-            currentlyConnecting = true;
-            connect(device)
+        public void connectToDevice(BluetoothDevice device) {
+            currentDevice = device;
+            currentlyConnecting.set(true);
+            connect(currentDevice)
                     .retry(3, 100)
                     .useAutoConnect(false)
-                    .done((dev) -> {connectedToTag = true; currentlyConnecting = false;})
-                    .fail((a, b) -> currentlyConnecting = false)
+                    .done((dev) -> { connectedToTag.set(true); currentlyConnecting.set(false); })
+                    .fail((a, b) -> { // if we are still running, try again
+                        synchronized (lifecycleMutex) {
+                            if(running == true) { connectToDevice(currentDevice); }
+                        }
+                    })
                     .enqueue();
         }
 
@@ -155,7 +163,7 @@ public class DecawaveUWB extends ASensor {
                 }
 
                 @Override
-                public boolean isRequiredServiceSupported(@NonNull final BluetoothGatt gatt) {
+                protected boolean isRequiredServiceSupported(@NonNull final BluetoothGatt gatt) {
                     final BluetoothGattService service = gatt.getService(LBS_UUID_SERVICE);
                     if (service != null) {
                         _locationDataCharacteristic = service.getCharacteristic(LBS_UUID_LOCATION_DATA_CHAR);
@@ -167,9 +175,15 @@ public class DecawaveUWB extends ASensor {
 
                 @Override
                 protected void onDeviceDisconnected() {
-                    _locationDataCharacteristic = null;
-                    _locationModeCharacteristic = null;
-                    connectedToTag = false;
+                    synchronized (lifecycleMutex) {
+                        connectedToTag.set(false);
+                        if(running == false) {
+                            _locationDataCharacteristic = null;
+                            _locationModeCharacteristic = null;
+                        } else { // attempt to reconnect
+                            connectToDevice(currentDevice);
+                        }
+                    }
                 }
             };
         }
@@ -266,18 +280,24 @@ public class DecawaveUWB extends ASensor {
 
     @Override
     public void onResume(Activity act) {
-        if (bluetoothAdapter != null) {
-            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(config.tagMacAddress);
-            decaManager.connectToDevice(device);
+        synchronized (lifecycleMutex) {
+            running = true;
+            if (bluetoothAdapter != null) {
+                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(config.tagMacAddress);
+                decaManager.connectToDevice(device);
+            }
         }
     }
 
     @Override
     public void onPause(Activity act) {
-        decaManager.disconnect().enqueue();
-        connectedToTag = false;
+        synchronized (lifecycleMutex) {
+            running = false;
+            decaManager.disconnect().enqueue();
+            connectedToTag.set(false);
+        }
     }
 
-    public boolean isConnectedToTag() { return connectedToTag; }
-    public boolean isCurrentlyConnecting() { return currentlyConnecting; }
+    public boolean isConnectedToTag() { return connectedToTag.get(); }
+    public boolean isCurrentlyConnecting() { return currentlyConnecting.get(); }
 }
