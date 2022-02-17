@@ -31,7 +31,7 @@ public class WifiScanProvider {
     private final Activity activity;
     private final long scanIntervalMSec;
     private final WifiManager wifiManager;
-    private final List<WifiScanCallback> scanCallbacks = new ArrayList<>();
+    private final ArrayList<WifiScanCallback> scanCallbacks = new ArrayList<>();
     private final IntentFilter scanAvailableFilter = new IntentFilter();
 
     // scan state
@@ -52,16 +52,17 @@ public class WifiScanProvider {
 
     public void unregisterCallback(WifiScanCallback scanCallback) {
         scanCallbacks.remove(scanCallback);
-        if(scanCallbacks.size() == 0) {
+        if (scanCallbacks.size() == 0) {
             stopScanning();
         }
     }
 
     private void notifyListeners(List<ScanResult> scanResults) {
-        for(WifiScanCallback wifiScanCallback : scanCallbacks) {
+        ArrayList<WifiScanCallback> tmpScanCallbacks = (ArrayList<WifiScanCallback>) this.scanCallbacks.clone();
+        for (WifiScanCallback wifiScanCallback : tmpScanCallbacks) {
             try {
                 wifiScanCallback.onScanResult(scanResults);
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 Log.e(TAG, ex.getMessage());
             }
         }
@@ -123,7 +124,7 @@ public class WifiScanProvider {
 
     private void runScan() {
         try {
-            if(wifiManager.startScan()) {
+            if(wifiManager.startScan() && scanIntervalMSec > 0) {
                 Log.d(TAG, "Wifi Scan started");
             }
         } catch (Exception e) {
