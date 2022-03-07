@@ -92,6 +92,8 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         public void setMeasurementSuccess(String macAddress, boolean success) {
             synchronized (plannedMeasurements) {
                 ScheduledMeasurement plannedMeasurement = plannedMeasurements.get(macAddress);
+                if (plannedMeasurement == null) return;
+
                 if(success == true) {
                     if(plannedMeasurement.numberFails >= SLOW_TASK_FAILURE_THRESHOLD) {
                         Log.d("RTTScanPlan", plannedMeasurement.scanResult.BSSID + ": Slow -> Fast");
@@ -126,6 +128,15 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
                 scanCnt %= SLOW_TASK_SCHEDULE_INTERVAL;
             }
         }
+
+        /**
+         * Clear planned measurements
+         */
+        public void clear() {
+            synchronized (plannedMeasurements) {
+                plannedMeasurements.clear();
+            }
+        }
     }
 
     private Timer rangeTimer;
@@ -158,6 +169,9 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
     @Override
     public void onPause(Activity act) {
         stopScanningAndRanging();
+
+        // reset rtt scan results
+        scanPlan.clear();
     }
 
     private void startScanningAndRanging() {
