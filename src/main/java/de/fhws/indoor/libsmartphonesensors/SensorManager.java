@@ -46,7 +46,9 @@ public class SensorManager {
 
         // uwb
         public String decawaveUWBTagMacAddress = "";
-        public long wifiScanIntervalSec;
+        public long wifiScanIntervalMSec;
+        // ftm
+        public long ftmRangingIntervalMSec;
     }
 
     public interface SensorListener {
@@ -82,7 +84,7 @@ public class SensorManager {
         sensors.clear();
         sensorTypeMap.clear();
 
-        wifiScanProvider = new WifiScanProvider(activity, config.wifiScanIntervalSec);
+        wifiScanProvider = new WifiScanProvider(activity, config.wifiScanIntervalMSec);
         final ASensor.SensorListener sensorEvtForwarder = new ASensor.SensorListener(){
             @Override public void onData(final SensorType id, final long timestamp, final String csv) { sendSensorEvent(timestamp, id, csv); }
         };
@@ -122,7 +124,7 @@ public class SensorManager {
         if(config.hasWifiRTT) {
             if (WiFiRTTScan.isSupported(activity)) {
                 if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.P) { return; }
-                final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(activity, wifiScanProvider);
+                final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(activity, wifiScanProvider, config.ftmRangingIntervalMSec);
                 sensors.add(wiFiRTTScan);
                 // log wifi RTT using sensor number 17
                 wiFiRTTScan.setListener(sensorEvtForwarder);

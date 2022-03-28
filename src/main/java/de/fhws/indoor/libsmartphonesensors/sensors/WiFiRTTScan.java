@@ -11,6 +11,7 @@ import android.net.wifi.rtt.RangingResult;
 import android.net.wifi.rtt.RangingResultCallback;
 import android.net.wifi.rtt.WifiRttManager;
 import android.os.Build;
+import android.os.Handler;
 import android.util.Log;
 
 import androidx.annotation.RequiresApi;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
@@ -41,6 +43,7 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
     private final WifiScanProvider wifiScanProvider;
     private final Executor mainExecutor;
     private final ScanPlan scanPlan = new ScanPlan();
+    private long rangingIntervalMSec;
 
     private static class ScanPlan {
 
@@ -139,28 +142,22 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         }
     }
 
-    private Timer rangeTimer;
-    private TimerTask rangingTask() {
-        return new TimerTask() {
-            @RequiresApi(api = Build.VERSION_CODES.P)
-            @Override
-            public void run() {
-                startRanging();
-            }
-        };
-    }
+    private final AtomicBoolean rangingRunning = new AtomicBoolean(false);
+    private final Handler delayNextMeasurementHandler = new Handler();
     private final RangingResultCallback rangeCallback;
 
     @RequiresApi(api = Build.VERSION_CODES.P)
-    public WiFiRTTScan(Activity activity, WifiScanProvider wifiScanProvider) {
+    public WiFiRTTScan(Activity activity, WifiScanProvider wifiScanProvider, long rangingIntervalMSec) {
         this.activity = activity;
         this.wifiScanProvider = wifiScanProvider;
         this.rangeCallback = new WiFiRTTScanRangingCallback();
+        this.rangingIntervalMSec = rangingIntervalMSec;
 
         this.rttManager = (WifiRttManager) activity.getSystemService(Context.WIFI_RTT_RANGING_SERVICE);
         this.mainExecutor = activity.getMainExecutor();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.P)
     @Override
     public void onResume(Activity act) {
         startScanningAndRanging();
@@ -174,21 +171,22 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         scanPlan.clear();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.P)
     private void startScanningAndRanging() {
         wifiScanProvider.registerCallback(this);
-
-        // range to all available APs all 200ms
-        rangeTimer = new Timer();
-        rangeTimer.scheduleAtFixedRate(rangingTask(), 0, 200);
+        rangingRunning.set(true);
+        startRanging();
     }
 
     private void stopScanningAndRanging() {
         wifiScanProvider.unregisterCallback(this);
-        rangeTimer.cancel();
+        rangingRunning.set(false);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     private void startRanging() {
+        if(rangingRunning.get() == false) { return; }
+
         LinkedList<RangingRequest.Builder> builders = new LinkedList<>();
         AtomicInteger cnt = new AtomicInteger(0);
         scanPlan.iteratePlannedMeasurements((ScanResult sr) -> {
@@ -208,6 +206,10 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
                 final RangingRequest request = builder.build();
                 rttManager.startRanging(request, mainExecutor, rangeCallback);
             }
+            if(builders.size() == 0) {
+                // retry laster
+                queueNextDelayedRangingRequest();
+            }
         }
     }
 
@@ -224,6 +226,11 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.P)
+    private void queueNextDelayedRangingRequest() {
+        delayNextMeasurementHandler.postDelayed(() -> startRanging(), this.rangingIntervalMSec);
+    }
+
     // result callback
     @RequiresApi(api = Build.VERSION_CODES.P)
     private class WiFiRTTScanRangingCallback extends RangingResultCallback {
@@ -231,10 +238,13 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         public void onRangingFailure(final int i) {
             //emitter.onError(new RuntimeException("The WiFi-Ranging failed with error code: " + i));
             Log.d(TAG, "onRangingFailure: " + i);
+            queueNextDelayedRangingRequest();
         }
 
         @Override
         public void onRangingResults(final List<RangingResult> list) {
+            if(rangingRunning.get() == false) { return; }
+            queueNextDelayedRangingRequest();
             //emitter.onSuccess(list);
             //Log.d("RTT", "onRangingResults: " + list.size());
 
