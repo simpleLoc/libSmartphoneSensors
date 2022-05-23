@@ -14,9 +14,14 @@ import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 
+import java.sql.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,16 +47,28 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
     private final WifiRttManager rttManager;
     private final WifiScanProvider wifiScanProvider;
     private final Executor mainExecutor;
-    private final ScanPlan scanPlan = new ScanPlan();
-    private long rangingIntervalMSec;
+    private final ScanPlan scanPlan;
+    private ScanConfig scanConfig = new ScanConfig();
+
+    private static class ScanConfig {
+        long minRangingIntervalMSec;
+        long rangingIntervalMSec;
+    }
 
     private static class ScanPlan {
 
-        private static class ScheduledMeasurement {
+        private static class ScheduledMeasurement implements Comparable<ScheduledMeasurement> {
             ScanResult scanResult = null;
             int numberFails = 0;
+            long nextPlanned;
             ScheduledMeasurement(ScanResult scanResult) {
                 this.scanResult = scanResult;
+                this.nextPlanned = System.currentTimeMillis();
+            }
+
+            @Override
+            public int compareTo(@NonNull ScheduledMeasurement another) {
+                return Long.compare(nextPlanned, another.nextPlanned);
             }
         }
         public interface ScanPlanIterFn {
@@ -61,15 +78,31 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         /**
          * Threshold that defines when a scheduled measurement is part of the slow task list.
          * If the measurement to an AP failed for this amount of times, it is then scheduled
-         * with a slower interval of 1/SLOW_TASK_SCHEDULE_INTERVAL.
+         * with the slower interval.
          */
-        private static long SLOW_TASK_FAILURE_THRESHOLD = 4; // 4 * 200ms
+        private static long SLOW_TASK_FAILURE_THRESHOLD = 4;
         /**
          * Interval with which measurements are scheduled if they are part of the slow task list.
          */
-        private static long SLOW_TASK_SCHEDULE_INTERVAL = 10; // 10 * 200ms
-        private long scanCnt = 0;
+        private static long MEASURE_INTERVAL_FACTOR_SLOW = 5;
+        /**
+         * Interval with which measurements are scheduled if they are part of the slow task list.
+         */
+        private static long MEASURE_INTERVAL_FACTOR_FAST = 1;
+
+        ScanConfig scanConfig;
         private HashMap<String, ScheduledMeasurement> plannedMeasurements = new HashMap<>();
+        private ArrayList<ScheduledMeasurement> scanQueue = new ArrayList<>();
+
+        public ScanPlan(ScanConfig scanConfig) {
+            this.scanConfig = scanConfig;
+        }
+
+        private void sortScanQueue() {
+            synchronized (plannedMeasurements) {
+                Collections.sort(scanQueue);
+            }
+        }
 
         /**
          * Add the macAddress of a ftm-able device that was found during a scan.
@@ -79,7 +112,9 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         public boolean addMeasurementTarget(String macAddress, ScanResult scanResult) {
             synchronized (plannedMeasurements) {
                 if (!plannedMeasurements.containsKey(macAddress)) {
-                    plannedMeasurements.put(macAddress, new ScheduledMeasurement(scanResult));
+                    ScheduledMeasurement scheduledMeasurement = new ScheduledMeasurement(scanResult);
+                    plannedMeasurements.put(macAddress, scheduledMeasurement);
+                    scanQueue.add(scheduledMeasurement);
                     return true;
                 } else { // measurement-device was found in scan result, reset failure count to move it back to fast list!
                     setMeasurementSuccess(macAddress, true);
@@ -110,26 +145,31 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
                 }
             }
         }
-
         /**
          * Iterate over the device that should be included in the next ftm scan.
          */
-        public void iteratePlannedMeasurements(ScanPlanIterFn iterFn) {
+        public int iterateNextNPlanned(int n, ScanPlanIterFn iterFn) {
+            Long currentTs = System.currentTimeMillis();
+            int scanJobCnt = 0;
             synchronized (plannedMeasurements) {
-                scanCnt += 1;
-                for(ScheduledMeasurement plannedMeasurement : plannedMeasurements.values()) {
-                    if(plannedMeasurement.numberFails >= SLOW_TASK_FAILURE_THRESHOLD) {
-                        // measurement failed a couple of times before, and thus is part of the slow
-                        // interval scan list. So we schedule these measurements with a larger interval.
-                        if(scanCnt == SLOW_TASK_SCHEDULE_INTERVAL) {
-                            iterFn.iter(plannedMeasurement.scanResult);
+                for(int i = 0; i < Math.min(n, scanQueue.size()); ++i) {
+                    ScheduledMeasurement scheduledMeasurement = scanQueue.get(i);
+                    if(scheduledMeasurement.nextPlanned <= currentTs) {
+                        iterFn.iter(scheduledMeasurement.scanResult);
+                        scanJobCnt += 1;
+
+                        // advance nextPlanned timestamp of measurement
+                        if(scheduledMeasurement.numberFails >= SLOW_TASK_FAILURE_THRESHOLD) {
+                            scheduledMeasurement.nextPlanned = System.currentTimeMillis() + scanConfig.rangingIntervalMSec * MEASURE_INTERVAL_FACTOR_SLOW;
+                        } else {
+                            scheduledMeasurement.nextPlanned = System.currentTimeMillis() + scanConfig.rangingIntervalMSec * MEASURE_INTERVAL_FACTOR_FAST;
                         }
-                    } else {
-                        iterFn.iter(plannedMeasurement.scanResult);
+
                     }
                 }
-                scanCnt %= SLOW_TASK_SCHEDULE_INTERVAL;
+                sortScanQueue();
             }
+            return scanJobCnt;
         }
 
         /**
@@ -151,7 +191,9 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         this.activity = activity;
         this.wifiScanProvider = wifiScanProvider;
         this.rangeCallback = new WiFiRTTScanRangingCallback();
-        this.rangingIntervalMSec = rangingIntervalMSec;
+        this.scanConfig.minRangingIntervalMSec = rangingIntervalMSec;
+        this.scanConfig.rangingIntervalMSec = this.scanConfig.minRangingIntervalMSec;
+        this.scanPlan = new ScanPlan(scanConfig);
 
         this.rttManager = (WifiRttManager) activity.getSystemService(Context.WIFI_RTT_RANGING_SERVICE);
         this.mainExecutor = activity.getMainExecutor();
@@ -187,28 +229,20 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
     private void startRanging() {
         if(rangingRunning.get() == false) { return; }
 
-        LinkedList<RangingRequest.Builder> builders = new LinkedList<>();
-        AtomicInteger cnt = new AtomicInteger(0);
-        scanPlan.iteratePlannedMeasurements((ScanResult sr) -> {
-            if (builders.size() == 0 || cnt.get() >= RangingRequest.getMaxPeers()) {
-                builders.add(new RangingRequest.Builder());
-                cnt.set(0);
-            }
-            builders.getLast().addAccessPoint(sr);
-            cnt.incrementAndGet();
+        RangingRequest.Builder builder = new RangingRequest.Builder();
+        int scanJobCnt = scanPlan.iterateNextNPlanned(RangingRequest.getMaxPeers(), (ScanResult sr) -> {
+            builder.addAccessPoint(sr);
         });
 
         if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.e(TAG, "Can not start ranging. Permission not granted");
             stopScanningAndRanging();
         } else {
-            for (RangingRequest.Builder builder : builders) {
-                final RangingRequest request = builder.build();
-                rttManager.startRanging(request, mainExecutor, rangeCallback);
-            }
-            if(builders.size() == 0) {
-                // retry laster
+            if(scanJobCnt == 0) {
+                // retry later
                 queueNextDelayedRangingRequest();
+            } else {
+                rttManager.startRanging(builder.build(), mainExecutor, rangeCallback);
             }
         }
     }
@@ -218,7 +252,9 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
     public void onScanResult(List<ScanResult> scanResults) {
         for(ScanResult sr : scanResults) {
             if(sr.is80211mcResponder()) {
-                sr.channelWidth = ScanResult.CHANNEL_WIDTH_20MHZ;
+                if(sr.channelWidth != ScanResult.CHANNEL_WIDTH_20MHZ && sr.channelWidth != ScanResult.CHANNEL_WIDTH_40MHZ) {
+                    sr.channelWidth = ScanResult.CHANNEL_WIDTH_20MHZ;
+                }
                 if(scanPlan.addMeasurementTarget(sr.BSSID, sr)) {
                     Log.i(TAG, "Found new RTT-enabled ("+ sr.channelWidth+") AP: " + sr.BSSID);
                 }
@@ -228,7 +264,7 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     private void queueNextDelayedRangingRequest() {
-        delayNextMeasurementHandler.postDelayed(() -> startRanging(), this.rangingIntervalMSec);
+        delayNextMeasurementHandler.postDelayed(() -> startRanging(), this.scanConfig.rangingIntervalMSec);
     }
 
     // result callback
@@ -238,15 +274,16 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         public void onRangingFailure(final int i) {
             //emitter.onError(new RuntimeException("The WiFi-Ranging failed with error code: " + i));
             Log.d(TAG, "onRangingFailure: " + i);
+            scanConfig.rangingIntervalMSec += 50; // ranging failed, increase ranging delay by 50ms
             queueNextDelayedRangingRequest();
         }
 
         @Override
         public void onRangingResults(final List<RangingResult> list) {
             if(rangingRunning.get() == false) { return; }
+            // ranging worked, decrease delay ranging by 10ms
+            scanConfig.rangingIntervalMSec = Math.max(scanConfig.rangingIntervalMSec - 10, scanConfig.minRangingIntervalMSec);
             queueNextDelayedRangingRequest();
-            //emitter.onSuccess(list);
-            //Log.d("RTT", "onRangingResults: " + list.size());
 
             for (final RangingResult res : list) {
                 if(res.getStatus() != RangingResult.STATUS_SUCCESS) {
