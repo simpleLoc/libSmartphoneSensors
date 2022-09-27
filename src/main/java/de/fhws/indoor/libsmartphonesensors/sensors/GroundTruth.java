@@ -19,18 +19,16 @@ public class GroundTruth extends ASensor {
         //empty as my soul
     }
 
-    public void writeGroundTruth(final int groundTruthCounter){
-        if (listener != null){listener.onData(SensorType.GROUND_TRUTH, SystemClock.elapsedRealtimeNanos(),
-                Integer.toString(groundTruthCounter)
-        );}
+    public void writeGroundTruth(final int groundTruthCounter, long ts){
+        if (listener != null){
+            listener.onData(SensorType.GROUND_TRUTH, ts, Integer.toString(groundTruthCounter));
+        }
     }
 
-    public void writeInitData(int pathID, int numGroundTruthPoints){
-
-        if (listener != null){listener.onData(SensorType.GROUND_TRUTH_PATH, SystemClock.elapsedRealtimeNanos(),
-                Integer.toString(pathID) + ";" +
-                Integer.toString(numGroundTruthPoints)
-        );}
+    public void writeInitData(int pathID, int numGroundTruthPoints, long ts){
+        if (listener != null){
+            listener.onData(SensorType.GROUND_TRUTH_PATH, ts, Integer.toString(pathID) + ";" + Integer.toString(numGroundTruthPoints));
+        }
     }
 
     @Override
