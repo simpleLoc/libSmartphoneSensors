@@ -39,10 +39,15 @@ public final class TimedOrderedLogger extends Logger {
     private File file;
     private BufferedOutputStream fos;
     private ReorderBuffer reorderBuffer;
+    private BufferedOutputStream customOutputStream = null;
     //private long oldestEntryTimestamp = 0;
 
     public TimedOrderedLogger(Context context, final String fileProviderAuthority) {
         super(context, fileProviderAuthority);
+    }
+
+    public void setCustomOutputStream(BufferedOutputStream out) {
+        customOutputStream = out;
     }
 
     @Override
@@ -65,13 +70,20 @@ public final class TimedOrderedLogger extends Logger {
         // open the output-file immediately (to get permission errors)
         // but do NOT yet write anything to the file
         final DataFolder folder = new DataFolder(context, "sensorOutFiles");
+
         file = new File(folder.getFolder(), startTs + ".csv");
 
-        try {
-            fos = new BufferedOutputStream(new FileOutputStream(file));
-            Log.d("logger", "will write to: " + file.toString());
-        } catch (final Exception e) {
-            throw new LoggerException("error while opening log-file", e);
+        // use custom output stream if set
+        if (customOutputStream != null) {
+            fos = customOutputStream;
+            Log.d("logger", "will write to custom output stream");
+        } else {
+            try {
+                fos = new BufferedOutputStream(new FileOutputStream(file));
+                Log.d("logger", "will write to: " + file.toString());
+            } catch (final Exception e) {
+                throw new LoggerException("error while opening log-file", e);
+            }
         }
         // oldestEntryTimestamp = 0;
     }
