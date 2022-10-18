@@ -95,7 +95,11 @@ public final class TimedOrderedLogger extends Logger {
         }
         try {
             fos.flush();
-            fos.close();
+
+            // only close stream if not the customOutputStream
+            if (fos != customOutputStream) {
+                fos.close();
+            }
         } catch (final Exception e) {
             throw new LoggerException("error while writing log-file", e);
         }
