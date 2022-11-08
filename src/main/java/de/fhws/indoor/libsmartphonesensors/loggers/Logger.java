@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.fhws.indoor.libsmartphonesensors.SensorType;
+import de.fhws.indoor.libsmartphonesensors.io.RecordingSession;
 
 /**
  * Base-Class for all Logger implementations.
@@ -25,30 +26,24 @@ public abstract class Logger {
 
     public static final long BEGINNING_TS = -1;
 
-    // file provider authority to send readout file via ...
-    public final String fileProviderAuthority;
-
     // work data
     protected Context context;
-    /** timestamp of logging start. all entries are relative to this one */
-    protected long startTs = 0;
+    protected RecordingSession recordingSession;
 
     //statistics
     private AtomicLong statEntryCnt = new AtomicLong(0);
     private AtomicLong statSizeTotal = new AtomicLong(0);
     private AtomicBoolean isRunning = new AtomicBoolean(false);
 
-    public Logger(Context context, final String fileProviderAuthority) {
+    public Logger(Context context) {
         this.context = context;
-        this.fileProviderAuthority = fileProviderAuthority;
     }
 
 
-    public final void start(FileMetadata metadata) {
+    public final void start(RecordingSession recordingSession, FileMetadata metadata) {
+        this.recordingSession = recordingSession;
         statEntryCnt.set(0);
         statSizeTotal.set(0);
-        // starting timestamp
-        startTs = SystemClock.elapsedRealtimeNanos();
         isRunning.set(true);
         onStart();
 
@@ -66,19 +61,24 @@ public abstract class Logger {
     protected abstract void log(LogEntry logEntry);
 
     public final long getStartTS() {
-        return startTs;
+        return recordingSession.getStartTs();
     }
     public final long getSizeTotal() { return statSizeTotal.get(); }
     public final long getEventCnt() { return statEntryCnt.get(); }
     public abstract long getEntriesCached();
     public abstract float getCacheLevel();
-    public abstract String getName();
-    public abstract void shareLast(Activity activity);
+
+    public final String getName() {
+        if(recordingSession != null && recordingSession.isOpen()) {
+            return recordingSession.getName();
+        }
+        return "-";
+    }
 
     /** add a new CSV entry for the given sensor number to the internal buffer */
     public final void addCSV(final SensorType sensorNr, final long timestamp, final String csv) {
         if(isRunning.get() == false) { return; }
-        final long relTS = (timestamp == Logger.BEGINNING_TS) ? 0 : (timestamp - startTs);
+        final long relTS = (timestamp == Logger.BEGINNING_TS) ? 0 : (timestamp - getStartTS());
         if (relTS >= 0) { // drop pre startTS logs (at the beginning, sensors sometimes deliver old values)
             String line = String.format("%d;%d;%s\n", relTS, sensorNr.id(), csv);
             log(new LogEntry(relTS, line));

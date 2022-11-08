@@ -14,7 +14,7 @@ public abstract class ASensor {
 	public interface SensorListener {
 
 		/** received data from the given sensor */
-        public void onData(final SensorType id, final long timestamp, final String csv);
+        void onData(final SensorType id, final long timestamp, final String csv);
 
 	}
 

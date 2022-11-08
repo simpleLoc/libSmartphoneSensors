@@ -7,6 +7,7 @@ import android.util.Log;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.concurrent.ArrayBlockingQueue;
 
 /**
@@ -24,32 +25,17 @@ public final class UnorderedLogger extends Logger {
 
     private static final int LINE_BUFFER_SIZE = 5000;
 
-    private File file;
-    private FileOutputStream fos;
-
     private volatile boolean addingStopped = false; // Just to be sure
     private ArrayBlockingQueue<LogEntry> lineBuffer = new ArrayBlockingQueue<>(LINE_BUFFER_SIZE);
     private WriteBackWorker writeBackWorker;
 
-    public UnorderedLogger(Context context, final String fileProviderAuthority) {
-        super(context, fileProviderAuthority);
+    public UnorderedLogger(Context context) {
+        super(context);
     }
 
     @Override
     protected void onStart() {
         writeBackWorker = new WriteBackWorker();
-
-        // open the output-file immediately (to get permission errors)
-        // but do NOT yet write anything to the file
-        final DataFolder folder = new DataFolder(context, "sensorOutFiles");
-        file = new File(folder.getFolder(), startTs + ".csv");
-
-        try {
-            fos = new FileOutputStream(file);
-            Log.d("logger", "will write to: " + file.toString());
-        } catch (final Exception e) {
-            throw new LoggerException("error while opening log-file", e);
-        }
         writeBackWorker.start();
     }
 
@@ -60,11 +46,6 @@ public final class UnorderedLogger extends Logger {
             writeBackWorker.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
-        try {
-            fos.close();
-        } catch (final Exception e) {
-            throw new LoggerException("error while writing log-file", e);
         }
     }
 
@@ -83,19 +64,6 @@ public final class UnorderedLogger extends Logger {
         return 1.0f - (float)lineBuffer.remainingCapacity() / (float)LINE_BUFFER_SIZE;
     }
 
-    @Override
-    public String getName() {
-        if(file != null) {
-            return file.getName();
-        }
-        return "OrderedLogger";
-    }
-
-    @Override
-    public void shareLast(Activity activity) {
-        //TODO: implement
-    }
-
     private class WriteBackWorker extends Thread {
 
         public WriteBackWorker() {
@@ -106,6 +74,7 @@ public final class UnorderedLogger extends Logger {
         @Override
         public void run() {
             try {
+                OutputStream outputStream = recordingSession.stream();
                 while (true) {
                     LogEntry entry = lineBuffer.poll();
                     if (entry == null) {
@@ -115,7 +84,7 @@ public final class UnorderedLogger extends Logger {
                             Thread.sleep(10);
                         }
                     } else { // print log line
-                        fos.write(entry.csv.getBytes());
+                        outputStream.write(entry.csv.getBytes());
                     }
                 }
             } catch(InterruptedException e) {

@@ -1,19 +1,8 @@
 package de.fhws.indoor.libsmartphonesensors.loggers;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
-import android.net.Uri;
-import android.util.Log;
-
-import androidx.core.content.FileProvider;
-
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,23 +25,16 @@ public final class TimedOrderedLogger extends Logger {
     private static final long REORDER_TIMEFRAME_LOWER_NS = 7L * 1000 * 1000 * 1000;
 
     // members
-    private File file;
-    private BufferedOutputStream fos;
     private ReorderBuffer reorderBuffer;
-    private BufferedOutputStream customOutputStream = null;
-    //private long oldestEntryTimestamp = 0;
 
-    public TimedOrderedLogger(Context context, final String fileProviderAuthority) {
-        super(context, fileProviderAuthority);
-    }
-
-    public void setCustomOutputStream(BufferedOutputStream out) {
-        customOutputStream = out;
+    public TimedOrderedLogger(Context context) {
+        super(context);
     }
 
     @Override
     protected final void onStart() {
         reorderBuffer = new ReorderBuffer((commitSlice) -> {
+            OutputStream outputStream = recordingSession.stream();
             for(LogEntry entry : commitSlice) {
 //                if(oldestEntryTimestamp > entry.timestamp) {
 //                    throw new MyException("Order Issue!");
@@ -60,32 +42,12 @@ public final class TimedOrderedLogger extends Logger {
 //                    oldestEntryTimestamp = entry.timestamp;
 //                }
                 try {
-                    fos.write(entry.csv.getBytes());
+                    outputStream.write(entry.csv.getBytes());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         });
-
-        // open the output-file immediately (to get permission errors)
-        // but do NOT yet write anything to the file
-        final DataFolder folder = new DataFolder(context, "sensorOutFiles");
-
-        file = new File(folder.getFolder(), startTs + ".csv");
-
-        // use custom output stream if set
-        if (customOutputStream != null) {
-            fos = customOutputStream;
-            Log.d("logger", "will write to custom output stream");
-        } else {
-            try {
-                fos = new BufferedOutputStream(new FileOutputStream(file));
-                Log.d("logger", "will write to: " + file.toString());
-            } catch (final Exception e) {
-                throw new LoggerException("error while opening log-file", e);
-            }
-        }
-        // oldestEntryTimestamp = 0;
     }
 
     @Override
@@ -94,12 +56,7 @@ public final class TimedOrderedLogger extends Logger {
             reorderBuffer.flush();
         }
         try {
-            fos.flush();
-
-            // only close stream if not the customOutputStream
-            if (fos != customOutputStream) {
-                fos.close();
-            }
+            recordingSession.stream().flush();
         } catch (final Exception e) {
             throw new LoggerException("error while writing log-file", e);
         }
@@ -124,29 +81,6 @@ public final class TimedOrderedLogger extends Logger {
         synchronized (reorderBuffer) {
             return ((float)reorderBuffer.timespan() / (float)REORDER_TIMEFRAME_UPPER_NS);
         }
-    }
-
-    @Override
-    public String getName() {
-        if(file != null) {
-            return file.getName();
-        }
-        return "OrderedLogger";
-    }
-
-    @Override
-    public void shareLast(Activity activity) {
-        Uri path = FileProvider.getUriForFile(activity, fileProviderAuthority, file);
-        Intent i = new Intent(Intent.ACTION_SEND);
-        i.putExtra(Intent.EXTRA_TEXT, "Share Recording");
-        i.putExtra(Intent.EXTRA_STREAM, path);
-        i.setType("text/csv");
-        List<ResolveInfo> resInfoList = activity.getPackageManager().queryIntentActivities(i, PackageManager.MATCH_DEFAULT_ONLY);
-        for (ResolveInfo resolveInfo : resInfoList) {
-            String packageName = resolveInfo.activityInfo.packageName;
-            activity.grantUriPermission(packageName, path, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        }
-        activity.startActivity(Intent.createChooser(i, "Share Recording"));
     }
 
     private interface ReorderBufferCommitListener {
