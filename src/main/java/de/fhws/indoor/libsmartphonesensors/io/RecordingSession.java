@@ -11,6 +11,8 @@ import java.io.OutputStream;
 
 public class RecordingSession {
 
+    private static final String REMARK_HEADER = "\n\n\n# ================ REMARK ================\n";
+
     private long startTs;
     private final File file;
     private OutputStream fileStream;
@@ -46,6 +48,33 @@ public class RecordingSession {
             fileStream.close();
             fileStream = null;
         } catch (IOException e) { e.printStackTrace(); }
+    }
+
+    /**
+     * Adds the given (multi-line) remark to the recording file, then closes the session.
+     * This appends every line of the remark with a "# " comment designator at the bottom of the recording file.
+     * @param remark Remark to add at the bottom of the file
+     */
+    public void closeWithRemark(String remark) throws IOException {
+        String[] remarkLines = remark.split("\\r?\\n");
+        StringBuilder remarkBuilder = new StringBuilder(REMARK_HEADER.length() + remark.length() + remarkLines.length * 3);
+        remarkBuilder.append(REMARK_HEADER);
+        for(String remarkLine : remarkLines) {
+            remarkBuilder.append("# ");
+            remarkBuilder.append(remarkLine);
+            remarkBuilder.append("\n");
+        }
+        bufferedOutputStream.write(remarkBuilder.toString().getBytes());
+        close();
+    }
+
+    /**
+     * Aborts this RecordingSession.
+     * This closes and deletes the file
+     */
+    public void abort() {
+        close();
+        file.delete();
     }
 
 }
