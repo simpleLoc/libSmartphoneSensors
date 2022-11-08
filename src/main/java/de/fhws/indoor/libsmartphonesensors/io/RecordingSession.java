@@ -14,7 +14,7 @@ public class RecordingSession {
     private static final String REMARK_HEADER = "\n\n\n# ================ REMARK ================\n";
 
     private long startTs;
-    private final File file;
+    private File file;
     private OutputStream fileStream;
     private BufferedOutputStream bufferedOutputStream;
 
@@ -35,6 +35,8 @@ public class RecordingSession {
     public boolean isOpen() { return (fileStream != null); }
 
     public long getStartTs() { return startTs; }
+
+    public File getFile() { return file; }
 
     public OutputStream stream() { return bufferedOutputStream; }
 

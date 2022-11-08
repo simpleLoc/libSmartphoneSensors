@@ -11,7 +11,6 @@ import androidx.core.content.FileProvider;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,10 +26,12 @@ public class RecordingManager {
         this.fileProviderAuthority = fileProviderAuthority;
     }
 
-    public void shareNewest(Activity activity) {
-        File newestRecFile = getNewest();
-        if(newestRecFile == null) { return; }
-        Uri path = FileProvider.getUriForFile(activity, fileProviderAuthority, newestRecFile);
+    public void shareLast(Activity activity) {
+        RecordingSession lastSession = getCurrentSession();
+        if(lastSession.isOpen()) { throw new IllegalStateException("Can't share a currently running session!"); }
+        File lastSessionFile = lastSession.getFile();
+        if(!lastSessionFile.exists()) { return; }
+        Uri path = FileProvider.getUriForFile(activity, fileProviderAuthority, lastSessionFile);
         Intent i = new Intent(Intent.ACTION_SEND);
         i.putExtra(Intent.EXTRA_TEXT, "Share Recording");
         i.putExtra(Intent.EXTRA_STREAM, path);
