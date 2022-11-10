@@ -35,7 +35,8 @@ public enum SensorType {
     PEDESTRIAN_ACTIVITY(50),
     GROUND_TRUTH(99),
     GROUND_TRUTH_PATH(-1),
-    FILE_METADATA(-2)
+    FILE_METADATA(-2),
+    RECORDING_ID(-3)
 
     ;
 

@@ -24,7 +24,10 @@ public class RecordingManager {
     public RecordingManager(File rootPath, String fileProviderAuthority) {
         this.rootPath = rootPath;
         this.fileProviderAuthority = fileProviderAuthority;
+        rootPath.mkdirs();
     }
+
+    public File getRootPath() { return rootPath; }
 
     public void shareLast(Activity activity) {
         RecordingSession lastSession = getCurrentSession();

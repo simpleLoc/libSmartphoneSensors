@@ -18,21 +18,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 
-import java.sql.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
+import de.fhws.indoor.libsmartphonesensors.VendorInformation;
 import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
 
 /**
@@ -335,5 +330,19 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         }
 
         return rttManager.isAvailable();
+    }
+
+
+    public static void dumpVendorInformation(Activity activity, VendorInformation vendorInformation) {
+        VendorInformation.InformationStructure sensorInfo = vendorInformation.addSensor("WifiFTM");
+        boolean available = isSupported(activity);
+        sensorInfo.set("Available", available);
+        if(!available) { return; }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            sensorInfo.set("RangingRequest_MinBurstSize", RangingRequest.getMinRttBurstSize());
+            sensorInfo.set("RangingRequest_MaxBurstSize", RangingRequest.getMaxRttBurstSize());
+            sensorInfo.set("RangingRequest_DefaultBurstSize", RangingRequest.getDefaultRttBurstSize());
+            sensorInfo.set("RangingRequest_MaxPeers", RangingRequest.getMaxPeers());
+        }
     }
 }

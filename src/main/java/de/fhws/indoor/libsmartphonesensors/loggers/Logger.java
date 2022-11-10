@@ -49,6 +49,7 @@ public abstract class Logger {
 
         // commit metadata
         addCSV(SensorType.FILE_METADATA, BEGINNING_TS, metadata.toCsv());
+        addCSV(SensorType.RECORDING_ID, BEGINNING_TS, recordingSession.getRecordingId().toString());
     }
     protected abstract void onStart();
 

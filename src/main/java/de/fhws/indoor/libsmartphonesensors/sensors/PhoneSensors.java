@@ -15,6 +15,7 @@ import java.io.IOException;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
+import de.fhws.indoor.libsmartphonesensors.VendorInformation;
 
 /**
  * Sensor that surfaces all Sensors a phone has.
@@ -72,66 +73,6 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 		light = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
 		temperature = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
 		gameRotationVector = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
-	}
-
-	final char NL = '\n';
-
-	/** Write Vendors to file */
-	public void dumpVendors(File vendorFile) {
-		try {
-			final FileOutputStream fos = new FileOutputStream(vendorFile);
-			final StringBuilder sb = new StringBuilder();
-
-			// constructor smartphone details
-			sb.append("[Device]").append(NL);
-			sb.append("\tModel: " + android.os.Build.MODEL).append(NL);
-			sb.append("\tAndroid: " + Build.VERSION.RELEASE).append(NL);
-			sb.append(NL);
-
-			// construct sensor details
-			dumpSensor(sb, SensorType.ACCELEROMETER, acc);
-			dumpSensor(sb, SensorType.GRAVITY, grav);
-			dumpSensor(sb, SensorType.LINEAR_ACCELERATION, lin_acc);
-			dumpSensor(sb, SensorType.GYROSCOPE, gyro);
-			dumpSensor(sb, SensorType.MAGNETIC_FIELD, magnet);
-			dumpSensor(sb, SensorType.PRESSURE, press);
-			dumpSensor(sb, SensorType.RELATIVE_HUMIDITY, humidity);
-			dumpSensor(sb, SensorType.ORIENTATION_OLD, ori);
-			dumpSensor(sb, SensorType.LIGHT, light);
-			dumpSensor(sb, SensorType.AMBIENT_TEMPERATURE, temperature);
-			//dumpSensor(sb, SensorType.HEART_RATE, heart);
-			dumpSensor(sb, SensorType.GAME_ROTATION_VECTOR, gameRotationVector);
-
-			// write
-			fos.write(sb.toString().getBytes());
-			fos.close();
-
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/** dump all details of the given sensor into the provided stringbuilder */
-	private void dumpSensor(final StringBuilder sb, final SensorType type, final Sensor sensor) {
-		sb.append("[Sensor]").append(NL);
-		sb.append("\tour_id: ").append(type.id()).append(NL);
-		sb.append("\ttype: ").append(type).append(NL);
-
-		if (sensor != null) {
-			sb.append("\tVendor: ").append(sensor.getVendor()).append(NL);
-			sb.append("\tName: ").append(sensor.getName()).append(NL);
-			sb.append("\tVersion: ").append(sensor.getVersion()).append(NL);
-			sb.append("\tMinDelay: ").append(sensor.getMinDelay()).append(NL);
-			//sb.append("\tMaxDelay: ").append(sensor.getMaxDelay()).append(NL);
-			sb.append("\tMaxRange: ").append(sensor.getMaximumRange()).append(NL);
-			sb.append("\tPower: ").append(sensor.getPower()).append(NL);
-			//sb.append("ReportingMode: ").append(sensor.getReportingMode()).append(NL);
-			sb.append("\tResolution: ").append(sensor.getResolution()).append(NL);
-			sb.append("\tType: ").append(sensor.getType()).append(NL);
-		} else {
-			sb.append("\tnot available!\n");
-		}
-		sb.append("\n");
 	}
 
     @Override
@@ -356,4 +297,40 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 		sensorManager.unregisterListener(this);
     }
 
+
+
+
+	public static void dumpVendorInformation(SensorManager sensorManager, VendorInformation vendorInformation) {
+		dumpSensorInformation(vendorInformation.addSensor("Accelerometer"), sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
+		dumpSensorInformation(vendorInformation.addSensor("Gravity"), sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY));
+		dumpSensorInformation(vendorInformation.addSensor("LinearAcceleration"), sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION));
+		dumpSensorInformation(vendorInformation.addSensor("Gyroscope"), sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
+		dumpSensorInformation(vendorInformation.addSensor("Magnetometer"), sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
+		dumpSensorInformation(vendorInformation.addSensor("Pressure"), sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE));
+		dumpSensorInformation(vendorInformation.addSensor("RelativeHumidity"), sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY));
+		dumpSensorInformation(vendorInformation.addSensor("OrientationOld"), sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION));
+		dumpSensorInformation(vendorInformation.addSensor("Light"), sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT));
+		dumpSensorInformation(vendorInformation.addSensor("AmbientTemperature"), sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE));
+		//dumpSensorInformation(vendorInformation.addSensor("HeartRate"), sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE));
+		dumpSensorInformation(vendorInformation.addSensor("GameRotationVector"), sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR));
+	}
+
+	private static void dumpSensorInformation(final VendorInformation.InformationStructure sensorInfo, final Sensor sensor) {
+		sensorInfo.set("Available", (sensor != null));
+		if(sensor == null) { return; }
+		sensorInfo.set("TypeId", sensor.getType());
+		sensorInfo.set("Type", sensor.getStringType());
+
+		sensorInfo.set("Available", "true");
+		sensorInfo.set("Vendor", sensor.getVendor());
+		sensorInfo.set("Name", sensor.getName());
+		sensorInfo.set("Version", sensor.getVersion());
+		sensorInfo.set("MinDelay", sensor.getMinDelay());
+		sensorInfo.set("MaxDelay", sensor.getMaxDelay());
+		sensorInfo.set("MaxRange", sensor.getMaximumRange());
+		sensorInfo.set("Power", sensor.getPower());
+		sensorInfo.set("ReportingMode", sensor.getReportingMode());
+		sensorInfo.set("Resolution", sensor.getResolution());
+		sensorInfo.set("Type", sensor.getType());
+	}
 }

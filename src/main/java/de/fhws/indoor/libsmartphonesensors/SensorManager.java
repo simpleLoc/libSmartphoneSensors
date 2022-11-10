@@ -9,13 +9,19 @@ import android.content.Intent;
 import android.location.LocationManager;
 import android.os.Build;
 import android.provider.Settings;
+import android.util.AndroidException;
 
 import androidx.core.app.ActivityCompat;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
+import de.fhws.indoor.libsmartphonesensors.io.VendorInformationSerializer;
 import de.fhws.indoor.libsmartphonesensors.sensors.DecawaveUWB;
 import de.fhws.indoor.libsmartphonesensors.sensors.EddystoneUIDBeacon;
 import de.fhws.indoor.libsmartphonesensors.sensors.GpsNew;
@@ -72,7 +78,7 @@ public class SensorManager {
         }
     }
 
-    public <T extends ASensor> T getSensor(Class<T> clazz) {//FIXME: test this!
+    public <T extends ASensor> T getSensor(Class<T> clazz) {
         if(running == false) { return null; }
         Integer idx = sensorTypeMap.get(clazz);
         if(idx == null) { return null; }
@@ -134,7 +140,12 @@ public class SensorManager {
             // bluetooth permission
             if(ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION)) {
             } else {
-                ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_REQUEST_READ_BT);
+                ActivityCompat.requestPermissions(activity, new String[]{
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.BLUETOOTH_CONNECT,
+                        Manifest.permission.BLUETOOTH_ADMIN,
+                        Manifest.permission.BLUETOOTH_SCAN
+                }, MY_PERMISSIONS_REQUEST_READ_BT);
             }
 
             LocationManager lm = (LocationManager)activity.getSystemService(Context.LOCATION_SERVICE);
@@ -191,9 +202,31 @@ public class SensorManager {
         }
 
         // fill sensorTypeMap for easier access
-        for(int idx = 0; idx < sensors.size(); ++idx) { //FIXME: test this!
+        for(int idx = 0; idx < sensors.size(); ++idx) {
             sensorTypeMap.put((Class<ASensor>) sensors.get(idx).getClass(), idx);
         }
+    }
+
+    public void dumpVendorInformation(Activity activity, File targetFile) throws IOException {
+        android.hardware.SensorManager androidSensorManager = (android.hardware.SensorManager)activity.getSystemService(Context.SENSOR_SERVICE);
+        FileOutputStream outputStream = new FileOutputStream(targetFile);
+        VendorInformation vendorInformation = new VendorInformation();
+        // device info
+        VendorInformation.InformationStructure deviceInfo = vendorInformation.getDeviceInfo();
+        deviceInfo.set("SOCManufacturer" , Build.SOC_MANUFACTURER);
+        deviceInfo.set("SOCModel" , Build.SOC_MODEL);
+        deviceInfo.set("Manufacturer" , Build.MANUFACTURER);
+        deviceInfo.set("Brand" , Build.BRAND);
+        deviceInfo.set("Model" , Build.MODEL);
+        deviceInfo.set("Android" , Build.VERSION.RELEASE);
+        // sensor info
+        PhoneSensors.dumpVendorInformation(androidSensorManager, vendorInformation);
+        WiFiRTTScan.dumpVendorInformation(activity, vendorInformation);
+        iBeacon.dumpVendorInformation(activity, vendorInformation);
+
+        VendorInformationSerializer.serialize(outputStream, vendorInformation);
+        outputStream.flush();
+        outputStream.close();
     }
 
     public void start(Activity activity) throws Exception {

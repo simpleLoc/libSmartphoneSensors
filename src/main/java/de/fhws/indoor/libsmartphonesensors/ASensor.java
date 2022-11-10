@@ -21,7 +21,6 @@ public abstract class ASensor {
 	/** the listener to inform (if any) */
 	protected SensorListener listener = null;
 
-
 	/** start the sensor */
     public abstract void onResume(final Activity act);
 

@@ -10,13 +10,17 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.wifi.rtt.RangingRequest;
+import android.os.Build;
 import android.widget.Toast;
 
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.util.ArrayList;
 import java.util.List;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
+import de.fhws.indoor.libsmartphonesensors.VendorInformation;
 
 /**
  * Bluetooth iBeacon sensor.
@@ -96,4 +100,24 @@ public class iBeacon extends ASensor {
 		}
 	}
 
+
+	public static void dumpVendorInformation(Activity activity, VendorInformation vendorInformation) {
+		final BluetoothManager mgr = (BluetoothManager) activity.getSystemService(Context.BLUETOOTH_SERVICE);
+		BluetoothAdapter bt = (mgr != null) ? mgr.getAdapter() : null;
+
+		VendorInformation.InformationStructure bleInfo = vendorInformation.addSensor("Bluetooth");
+		bleInfo.set("Available", (bt != null));
+		if(bt == null) { return; }
+		bleInfo.set("Name", bt.getName());
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			bleInfo.set("BLEMaximumAdvertisingDataLength", bt.getLeMaximumAdvertisingDataLength());
+			bleInfo.set("BLE2MPhySupported", bt.isLe2MPhySupported());
+			bleInfo.set("BLECodedPhySupported", bt.isLeCodedPhySupported());
+			bleInfo.set("BLEExtendedAdvertisingSupported", bt.isLeExtendedAdvertisingSupported());
+			bleInfo.set("BLEPeriodicAdvertisingSupported", bt.isLePeriodicAdvertisingSupported());
+			bleInfo.set("MultipleAdvertisementSupported", bt.isMultipleAdvertisementSupported());
+			bleInfo.set("OffloadedFilteringSupported", bt.isOffloadedFilteringSupported());
+			bleInfo.set("OffloadedScanBatchingSupported", bt.isOffloadedScanBatchingSupported());
+		}
+	}
 }

@@ -8,17 +8,20 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.UUID;
 
 public class RecordingSession {
 
     private static final String REMARK_HEADER = "\n\n\n# ================ REMARK ================\n";
 
+    private UUID recordingId;
     private long startTs;
     private File file;
     private OutputStream fileStream;
     private BufferedOutputStream bufferedOutputStream;
 
     private RecordingSession(long startTs, File file, OutputStream fileStream) {
+        recordingId = UUID.randomUUID();
         this.startTs = startTs;
         this.file = file;
         this.fileStream = fileStream;
@@ -29,6 +32,8 @@ public class RecordingSession {
         OutputStream fileStream = new FileOutputStream(file);
         return new RecordingSession(startTs, file, fileStream);
     }
+
+    public UUID getRecordingId() { return recordingId; }
 
     public String getName() { return file.getName(); }
 
