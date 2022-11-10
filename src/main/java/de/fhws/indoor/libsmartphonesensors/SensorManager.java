@@ -138,14 +138,14 @@ public class SensorManager {
         }
         if(config.hasBluetooth) {
             // bluetooth permission
-            if(ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION)) {
-            } else {
-                ActivityCompat.requestPermissions(activity, new String[]{
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.BLUETOOTH_CONNECT,
-                        Manifest.permission.BLUETOOTH_ADMIN,
-                        Manifest.permission.BLUETOOTH_SCAN
-                }, MY_PERMISSIONS_REQUEST_READ_BT);
+            String[] btPermissions = new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH_CONNECT,
+                    Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH_SCAN
+            };
+            for(String btPermission : btPermissions) {
+                if(ActivityCompat.shouldShowRequestPermissionRationale(activity, btPermission)) {
+                    ActivityCompat.requestPermissions(activity, new String[]{ btPermission }, MY_PERMISSIONS_REQUEST_READ_BT);
+                }
             }
 
             LocationManager lm = (LocationManager)activity.getSystemService(Context.LOCATION_SERVICE);
