@@ -10,7 +10,11 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.provider.Settings;
 import android.util.AndroidException;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.io.File;
@@ -19,6 +23,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
 import de.fhws.indoor.libsmartphonesensors.io.VendorInformationSerializer;
@@ -32,11 +38,9 @@ import de.fhws.indoor.libsmartphonesensors.sensors.StepDetector;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFi;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
 import de.fhws.indoor.libsmartphonesensors.sensors.iBeacon;
+import de.fhws.indoor.libsmartphonesensors.util.ble.MultiPermissionRequester;
 
 public class SensorManager {
-    final private int MY_PERMISSIONS_REQUEST_READ_BT = 123;
-    final private int MY_PERMISSIONS_REQUEST_READ_HEART = 321;
-
     private boolean running = false;
     private WifiScanProvider wifiScanProvider = null;
 
@@ -85,7 +89,7 @@ public class SensorManager {
         return (T) sensors.get(idx);
     }
 
-    public void configure(Activity activity, Config config) throws Exception {
+    public void configure(AppCompatActivity activity, Config config, MultiPermissionRequester permissionRequester) throws Exception {
         if(running == true) { throw new Exception("Can not reconfigure SensorManager while it is running"); }
         sensors.clear();
         sensorTypeMap.clear();
@@ -116,6 +120,8 @@ public class SensorManager {
             stepDetector.setListener(sensorEvtForwarder);
         }
         if(config.hasGPS) {
+            permissionRequester.add(Manifest.permission.ACCESS_FINE_LOCATION);
+            permissionRequester.add(Manifest.permission.ACCESS_COARSE_LOCATION);
             //log gps using sensor number 16
             final GpsNew gps = new GpsNew(activity);
             sensors.add(gps);
@@ -129,7 +135,7 @@ public class SensorManager {
         }
         if(config.hasWifiRTT) {
             if (WiFiRTTScan.isSupported(activity)) {
-                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.P) { return; }
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) { return; }
                 final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(activity, wifiScanProvider, config.ftmRangingIntervalMSec);
                 sensors.add(wiFiRTTScan);
                 // log wifi RTT using sensor number 17
@@ -138,14 +144,11 @@ public class SensorManager {
         }
         if(config.hasBluetooth) {
             // bluetooth permission
-            String[] btPermissions = new String[]{
-                    Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH_CONNECT,
-                    Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH_SCAN
-            };
-            for(String btPermission : btPermissions) {
-                if(ActivityCompat.shouldShowRequestPermissionRationale(activity, btPermission)) {
-                    ActivityCompat.requestPermissions(activity, new String[]{ btPermission }, MY_PERMISSIONS_REQUEST_READ_BT);
-                }
+            permissionRequester.add(Manifest.permission.ACCESS_FINE_LOCATION);
+            permissionRequester.add(Manifest.permission.BLUETOOTH_ADMIN);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                permissionRequester.add(Manifest.permission.BLUETOOTH_CONNECT);
+                permissionRequester.add(Manifest.permission.BLUETOOTH_SCAN);
             }
 
             LocationManager lm = (LocationManager)activity.getSystemService(Context.LOCATION_SERVICE);
@@ -159,38 +162,17 @@ public class SensorManager {
             } catch(Exception ex) {}
             if(!gps_enabled && !network_enabled) {
                 // notify user
-                new AlertDialog.Builder(activity)
-                        .setMessage(R.string.gps_not_enabled)
-                        .setCancelable(false)
-                        .setPositiveButton(R.string.open_location_settings, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface paramDialogInterface, int paramInt) {
-                                activity.startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
-                            }
-                        })
-                        .show();
+                permissionRequester.requestLocationService();
             }
 
             // log iBeacons using sensor number 9
-            final ASensor beacon;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                beacon = new iBeacon(activity);
-            } else {
-                beacon = null;
-                //beacon = new iBeaconOld(this);
-            }
+            final iBeacon beacon = new iBeacon(activity);
+            sensors.add(beacon);
+            beacon.setListener(sensorEvtForwarder);
 
-            if (beacon != null) {
-                sensors.add(beacon);
-                beacon.setListener(sensorEvtForwarder);
-            }
-
-            final ASensor eddystone;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                eddystone = new EddystoneUIDBeacon(activity);
-                sensors.add(eddystone);
-                eddystone.setListener(sensorEvtForwarder);
-            }
+            final EddystoneUIDBeacon eddystone = new EddystoneUIDBeacon(activity);
+            sensors.add(eddystone);
+            eddystone.setListener(sensorEvtForwarder);
         }
 
         if (config.hasDecawaveUWB) {

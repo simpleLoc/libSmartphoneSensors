@@ -1,6 +1,7 @@
 package de.fhws.indoor.libsmartphonesensors.sensors;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -40,12 +41,10 @@ public class GpsNew extends ASensor implements ConnectionCallbacks, OnConnection
     private Location mCurrentLocation;
     private LocationRequest mLocationRequest;
 
-    protected Boolean mRequestingLocationUpdates;
     protected String mLastUpdateTime;
 
     public GpsNew(Activity act) {
         this.act = act;
-        this.mRequestingLocationUpdates = false;
         this.mLastUpdateTime = "";
 
         buildGoogleApiClient();
@@ -62,7 +61,6 @@ public class GpsNew extends ASensor implements ConnectionCallbacks, OnConnection
                 .build();
 
         createLocationRequest();
-        mRequestingLocationUpdates = true;
         mGoogleApiClient.connect();
     }
 
@@ -81,21 +79,9 @@ public class GpsNew extends ASensor implements ConnectionCallbacks, OnConnection
     /**
      * Requests location updates from the FusedLocationApi.
      */
+    @SuppressLint("MissingPermission")
     protected void startLocationUpdates() {
-        // The final argument to {@code requestLocationUpdates()} is a LocationListener
-        // (http://developer.android.com/reference/com/google/android/gms/location/LocationListener.html).
-        if (ActivityCompat.checkSelfPermission(this.act, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this.act, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        LocationServices.FusedLocationApi.requestLocationUpdates(
-                mGoogleApiClient, mLocationRequest, this);
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }
 
     /**
@@ -114,7 +100,7 @@ public class GpsNew extends ASensor implements ConnectionCallbacks, OnConnection
     @Override
     public void onResume(Activity act) {
         running.set(true);
-        if (mGoogleApiClient.isConnected() && mRequestingLocationUpdates) {
+        if (mGoogleApiClient.isConnected()) {
             startLocationUpdates();
         }
     }
@@ -127,26 +113,17 @@ public class GpsNew extends ASensor implements ConnectionCallbacks, OnConnection
         }
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         Log.i(TAG, "Connected to GoogleApiClient");
 
         if (this.mCurrentLocation == null) {
-            if (ActivityCompat.checkSelfPermission(this.act, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this.act, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                return;
-            }
             this.mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
             mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
         }
 
-        if (mRequestingLocationUpdates) {
+        if (running.get()) {
             startLocationUpdates();
         }
     }

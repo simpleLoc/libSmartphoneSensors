@@ -1,6 +1,7 @@
 package de.fhws.indoor.libsmartphonesensors.sensors;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -220,6 +221,7 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         rangingRunning.set(false);
     }
 
+    @SuppressLint("MissingPermission")
     @RequiresApi(api = Build.VERSION_CODES.P)
     private void startRanging() {
         if(rangingRunning.get() == false) { return; }
@@ -229,16 +231,11 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
             builder.addAccessPoint(sr);
         });
 
-        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Log.e(TAG, "Can not start ranging. Permission not granted");
-            stopScanningAndRanging();
+        if(scanJobCnt == 0) {
+            // retry later
+            queueNextDelayedRangingRequest();
         } else {
-            if(scanJobCnt == 0) {
-                // retry later
-                queueNextDelayedRangingRequest();
-            } else {
-                rttManager.startRanging(builder.build(), mainExecutor, rangeCallback);
-            }
+            rttManager.startRanging(builder.build(), mainExecutor, rangeCallback);
         }
     }
 

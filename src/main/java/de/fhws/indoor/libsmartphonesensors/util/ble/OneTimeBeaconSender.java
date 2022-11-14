@@ -21,12 +21,12 @@ public class OneTimeBeaconSender {
     private BluetoothAdapter btAdapter;
     private BluetoothLeAdvertiser advertiser;
 
-    private static void setup(AppCompatActivity activity) {
+    private static void setup(MultiPermissionRequester permissionRequester) {
         if(!initialized) {
-            ActivityResultLauncher activityResultLauncher = activity.registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                initialized = true;
-            });
-            activityResultLauncher.launch(Manifest.permission.BLUETOOTH_ADVERTISE);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                permissionRequester.add(Manifest.permission.BLUETOOTH_ADVERTISE);
+            }
+            initialized = true;
         }
     }
     private void ensureInitialized() {
@@ -39,8 +39,8 @@ public class OneTimeBeaconSender {
         if(advertiser == null) { throw new UnsupportedOperationException(); }
     }
 
-    public OneTimeBeaconSender(AppCompatActivity activity) {
-        setup(activity);
+    public OneTimeBeaconSender(MultiPermissionRequester permissionRequester) {
+        setup(permissionRequester);
     }
 
     @SuppressLint("MissingPermission")
