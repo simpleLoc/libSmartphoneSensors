@@ -213,8 +213,10 @@ public class SensorManager {
         VendorInformation vendorInformation = new VendorInformation();
         // device info
         VendorInformation.InformationStructure deviceInfo = vendorInformation.getDeviceInfo();
-        deviceInfo.set("SOCManufacturer" , Build.SOC_MANUFACTURER);
-        deviceInfo.set("SOCModel" , Build.SOC_MODEL);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            deviceInfo.set("SOCManufacturer" , Build.SOC_MANUFACTURER);
+            deviceInfo.set("SOCModel" , Build.SOC_MODEL);
+        }
         deviceInfo.set("Manufacturer" , Build.MANUFACTURER);
         deviceInfo.set("Brand" , Build.BRAND);
         deviceInfo.set("Model" , Build.MODEL);
