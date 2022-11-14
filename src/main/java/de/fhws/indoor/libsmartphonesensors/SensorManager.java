@@ -2,29 +2,17 @@ package de.fhws.indoor.libsmartphonesensors;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.location.LocationManager;
 import android.os.Build;
-import android.provider.Settings;
-import android.util.AndroidException;
-import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 
 import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
 import de.fhws.indoor.libsmartphonesensors.io.VendorInformationSerializer;
@@ -38,7 +26,7 @@ import de.fhws.indoor.libsmartphonesensors.sensors.StepDetector;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFi;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
 import de.fhws.indoor.libsmartphonesensors.sensors.iBeacon;
-import de.fhws.indoor.libsmartphonesensors.util.ble.MultiPermissionRequester;
+import de.fhws.indoor.libsmartphonesensors.util.MultiPermissionRequester;
 
 public class SensorManager {
     private boolean running = false;
@@ -95,9 +83,7 @@ public class SensorManager {
         sensorTypeMap.clear();
 
         wifiScanProvider = new WifiScanProvider(activity, config.wifiScanIntervalMSec);
-        final ASensor.SensorListener sensorEvtForwarder = new ASensor.SensorListener(){
-            @Override public void onData(final SensorType id, final long timestamp, final String csv) { sendSensorEvent(timestamp, id, csv); }
-        };
+        final ASensor.SensorListener sensorEvtForwarder = (id, timestamp, csv) -> sendSensorEvent(timestamp, id, csv);
 
         // add sensors
         final GroundTruth grndTruth = new GroundTruth(activity);

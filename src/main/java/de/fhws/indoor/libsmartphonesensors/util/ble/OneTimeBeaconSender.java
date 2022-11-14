@@ -9,10 +9,9 @@ import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.os.Build;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
+
+import de.fhws.indoor.libsmartphonesensors.util.MultiPermissionRequester;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class OneTimeBeaconSender {
