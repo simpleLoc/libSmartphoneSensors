@@ -74,13 +74,21 @@ public class RecordingManager {
     }
 
     public RecordingSession startNewSession() throws FileNotFoundException {
+        Long startTs = SystemClock.elapsedRealtimeNanos();
+        return startNewNamedSession(startTs.toString(), startTs);
+    }
+
+    public RecordingSession startNewNamedSession(String name, long startTs) throws FileNotFoundException {
         if(currentSession != null && currentSession.isOpen()) {
             throw new IllegalStateException("A recording session is already running. Clean that up first");
         }
-        Long startTs = SystemClock.elapsedRealtimeNanos();
-        File file = new File(rootPath, startTs + ".csv");
+        File file = new File(rootPath, name + ".csv");
         currentSession = RecordingSession.create(startTs, file);
         return currentSession;
+    }
+
+    public RecordingSession startNewNamedSession(String name) throws FileNotFoundException {
+        return startNewNamedSession(name, SystemClock.elapsedRealtimeNanos());
     }
 
     public RecordingSession getCurrentSession() { return currentSession; }
