@@ -49,6 +49,7 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
     private static class ScanConfig {
         long minRangingIntervalMSec;
         long rangingIntervalMSec;
+        int ftmBurstSize;
     }
 
     private static class ScanPlan {
@@ -183,12 +184,13 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
     private final RangingResultCallback rangeCallback;
 
     @RequiresApi(api = Build.VERSION_CODES.P)
-    public WiFiRTTScan(Activity activity, WifiScanProvider wifiScanProvider, long rangingIntervalMSec) {
+    public WiFiRTTScan(Activity activity, WifiScanProvider wifiScanProvider, long rangingIntervalMSec, int ftmBurstSize) {
         this.activity = activity;
         this.wifiScanProvider = wifiScanProvider;
         this.rangeCallback = new WiFiRTTScanRangingCallback();
         this.scanConfig.minRangingIntervalMSec = rangingIntervalMSec;
         this.scanConfig.rangingIntervalMSec = this.scanConfig.minRangingIntervalMSec;
+        this.scanConfig.ftmBurstSize = ftmBurstSize;
         this.scanPlan = new ScanPlan(scanConfig);
 
         this.rttManager = (WifiRttManager) activity.getSystemService(Context.WIFI_RTT_RANGING_SERVICE);
@@ -227,6 +229,9 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         if(rangingRunning.get() == false) { return; }
 
         RangingRequest.Builder builder = new RangingRequest.Builder();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setRttBurstSize(scanConfig.ftmBurstSize);
+        }
         int scanJobCnt = scanPlan.iterateNextNPlanned(RangingRequest.getMaxPeers(), (ScanResult sr) -> {
             builder.addAccessPoint(sr);
         });

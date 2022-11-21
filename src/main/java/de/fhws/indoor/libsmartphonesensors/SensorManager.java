@@ -47,6 +47,7 @@ public class SensorManager {
         public long wifiScanIntervalMSec;
         // ftm
         public long ftmRangingIntervalMSec;
+        public int ftmBurstSize;
     }
 
     public interface SensorListener {
@@ -122,7 +123,7 @@ public class SensorManager {
         if(config.hasWifiRTT) {
             if (WiFiRTTScan.isSupported(activity)) {
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) { return; }
-                final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(activity, wifiScanProvider, config.ftmRangingIntervalMSec);
+                final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(activity, wifiScanProvider, config.ftmRangingIntervalMSec, config.ftmBurstSize);
                 sensors.add(wiFiRTTScan);
                 // log wifi RTT using sensor number 17
                 wiFiRTTScan.setListener(sensorEvtForwarder);
