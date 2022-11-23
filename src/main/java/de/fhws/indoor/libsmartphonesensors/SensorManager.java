@@ -123,6 +123,9 @@ public class SensorManager {
         if(config.hasWifiRTT) {
             if (WiFiRTTScan.isSupported(activity)) {
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) { return; }
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    permissionRequester.add(Manifest.permission.NEARBY_WIFI_DEVICES);
+                }
                 final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(activity, wifiScanProvider, config.ftmRangingIntervalMSec, config.ftmBurstSize);
                 sensors.add(wiFiRTTScan);
                 // log wifi RTT using sensor number 17
