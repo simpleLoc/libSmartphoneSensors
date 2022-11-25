@@ -22,6 +22,7 @@ import de.fhws.indoor.libsmartphonesensors.sensors.EddystoneUIDBeacon;
 import de.fhws.indoor.libsmartphonesensors.sensors.GpsNew;
 import de.fhws.indoor.libsmartphonesensors.sensors.GroundTruth;
 import de.fhws.indoor.libsmartphonesensors.sensors.HeadingChange;
+import de.fhws.indoor.libsmartphonesensors.sensors.Microphone;
 import de.fhws.indoor.libsmartphonesensors.sensors.PhoneSensors;
 import de.fhws.indoor.libsmartphonesensors.sensors.StepDetector;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFi;
@@ -42,6 +43,7 @@ public class SensorManager {
         public boolean hasHeadingChange = false;
         public boolean hasStepDetector = false;
         public boolean hasDecawaveUWB = false;
+        public boolean hasMicrophone = false;
 
         // uwb
         public String decawaveUWBTagMacAddress = "";
@@ -148,6 +150,12 @@ public class SensorManager {
             uwbConfig.tagMacAddress = config.decawaveUWBTagMacAddress;
             DecawaveUWB sensorUWB = new DecawaveUWB(sensorDataInterface, activity, uwbConfig);
             sensors.add(sensorUWB);
+        }
+
+        if(config.hasMicrophone) {
+            permissionRequester.add(Manifest.permission.RECORD_AUDIO);
+            Microphone sensorMic = new Microphone(sensorDataInterface);
+            sensors.add(sensorMic);
         }
 
         // fill sensorTypeMap for easier access
