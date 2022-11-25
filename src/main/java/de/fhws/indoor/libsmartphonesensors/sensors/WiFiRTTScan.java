@@ -230,7 +230,7 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
 
         RangingRequest.Builder builder = new RangingRequest.Builder();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            builder.setRttBurstSize(scanConfig.ftmBurstSize);
+            builder.setRttBurstSize((scanConfig.ftmBurstSize == 0) ? RangingRequest.getDefaultRttBurstSize() : scanConfig.ftmBurstSize);
         }
         int scanJobCnt = scanPlan.iterateNextNPlanned(RangingRequest.getMaxPeers(), (ScanResult sr) -> {
             builder.addAccessPoint(sr);
