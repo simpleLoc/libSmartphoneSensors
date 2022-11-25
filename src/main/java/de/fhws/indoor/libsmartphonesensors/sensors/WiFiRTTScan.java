@@ -1,6 +1,5 @@
 package de.fhws.indoor.libsmartphonesensors.sensors;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -17,7 +16,6 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-import androidx.core.app.ActivityCompat;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +25,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.VendorInformation;
 import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
@@ -184,7 +183,8 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
     private final RangingResultCallback rangeCallback;
 
     @RequiresApi(api = Build.VERSION_CODES.P)
-    public WiFiRTTScan(Activity activity, WifiScanProvider wifiScanProvider, long rangingIntervalMSec, int ftmBurstSize) {
+    public WiFiRTTScan(SensorDataInterface sensorDataInterface, Activity activity, WifiScanProvider wifiScanProvider, long rangingIntervalMSec, int ftmBurstSize) {
+        super(sensorDataInterface);
         this.activity = activity;
         this.wifiScanProvider = wifiScanProvider;
         this.rangeCallback = new WiFiRTTScanRangingCallback();
@@ -300,7 +300,7 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
 
                 Log.d(TAG, mac.toString() + " " + dist + " " + stdDevDist + " " + rssi);
 
-                if (listener != null) {
+                if (sensorDataInterface != null) {
                     // success; mac; dist; stdDevDist; RSSI; numAttemptedMeas; numSuccessfulMeas
                     StringBuilder sb = new StringBuilder();
 
@@ -312,7 +312,7 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
                     sb.append(numAttemptedMeas).append(';');
                     sb.append(numSuccessfulMeas);
 
-                    listener.onData(SensorType.WIFIRTT, timeStampInNS, sb.toString());
+                    sensorDataInterface.onData(timeStampInNS, SensorType.WIFIRTT, sb.toString());
                 }
             }
         }

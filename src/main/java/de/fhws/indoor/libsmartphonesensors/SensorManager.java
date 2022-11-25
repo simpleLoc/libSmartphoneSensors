@@ -6,6 +6,7 @@ import android.content.Context;
 import android.location.LocationManager;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
@@ -50,25 +51,12 @@ public class SensorManager {
         public int ftmBurstSize;
     }
 
-    public interface SensorListener {
-        void onData(final long timestamp, final SensorType id, final String csv);
-    }
-
     private ArrayList<ASensor> sensors = new ArrayList<>();
     private HashMap<Class<ASensor>, Integer> sensorTypeMap = new HashMap();
-    private ArrayList<SensorListener> sensorListeners = new ArrayList<>();
+    private SensorDataInterface sensorDataInterface;
 
-    public void addSensorListener(SensorListener sensorListener) {
-        sensorListeners.add(sensorListener);
-    }
-    public void removeSensorListener(SensorListener sensorListener) {
-        sensorListeners.remove(sensorListener);
-    }
-
-    private void sendSensorEvent(final long timestamp, final SensorType id, final String csv) {
-        for(SensorListener sensorListener : sensorListeners) {
-            sensorListener.onData(timestamp, id, csv);
-        }
+    public SensorManager(@NonNull SensorDataInterface sensorDataInterface) {
+        this.sensorDataInterface = sensorDataInterface;
     }
 
     public <T extends ASensor> T getSensor(Class<T> clazz) {
@@ -84,41 +72,34 @@ public class SensorManager {
         sensorTypeMap.clear();
 
         wifiScanProvider = new WifiScanProvider(activity, config.wifiScanIntervalMSec);
-        final ASensor.SensorListener sensorEvtForwarder = (id, timestamp, csv) -> sendSensorEvent(timestamp, id, csv);
 
         // add sensors
-        final GroundTruth grndTruth = new GroundTruth(activity);
+        final GroundTruth grndTruth = new GroundTruth(sensorDataInterface, activity);
         sensors.add(grndTruth);
-        grndTruth.setListener(sensorEvtForwarder);
 
         if(config.hasPhone) {
-            PhoneSensors phoneSensors = new PhoneSensors(activity);
-            phoneSensors.setListener(sensorEvtForwarder);
+            PhoneSensors phoneSensors = new PhoneSensors(sensorDataInterface, activity);
             sensors.add(phoneSensors);
         }
         if(config.hasHeadingChange) {
-            final HeadingChange headingChange = new HeadingChange(activity);
+            final HeadingChange headingChange = new HeadingChange(sensorDataInterface, activity);
             sensors.add(headingChange);
-            headingChange.setListener(sensorEvtForwarder);
         }
         if(config.hasStepDetector) {
-            final StepDetector stepDetector = new StepDetector(activity);
+            final StepDetector stepDetector = new StepDetector(sensorDataInterface, activity);
             sensors.add(stepDetector);
-            stepDetector.setListener(sensorEvtForwarder);
         }
         if(config.hasGPS) {
             permissionRequester.add(Manifest.permission.ACCESS_FINE_LOCATION);
             permissionRequester.add(Manifest.permission.ACCESS_COARSE_LOCATION);
             //log gps using sensor number 16
-            final GpsNew gps = new GpsNew(activity);
+            final GpsNew gps = new GpsNew(sensorDataInterface, activity);
             sensors.add(gps);
-            gps.setListener(sensorEvtForwarder);
         }
         if(config.hasWifi) {
             // log wifi using sensor number 8
-            final WiFi wifi = new WiFi(wifiScanProvider);
+            final WiFi wifi = new WiFi(sensorDataInterface, wifiScanProvider);
             sensors.add(wifi);
-            wifi.setListener(sensorEvtForwarder);
         }
         if(config.hasWifiRTT) {
             if (WiFiRTTScan.isSupported(activity)) {
@@ -126,10 +107,9 @@ public class SensorManager {
                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     permissionRequester.add(Manifest.permission.NEARBY_WIFI_DEVICES);
                 }
-                final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(activity, wifiScanProvider, config.ftmRangingIntervalMSec, config.ftmBurstSize);
+                final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(sensorDataInterface, activity, wifiScanProvider, config.ftmRangingIntervalMSec, config.ftmBurstSize);
                 sensors.add(wiFiRTTScan);
                 // log wifi RTT using sensor number 17
-                wiFiRTTScan.setListener(sensorEvtForwarder);
             }
         }
         if(config.hasBluetooth) {
@@ -156,21 +136,18 @@ public class SensorManager {
             }
 
             // log iBeacons using sensor number 9
-            final iBeacon beacon = new iBeacon(activity);
+            final iBeacon beacon = new iBeacon(sensorDataInterface, activity);
             sensors.add(beacon);
-            beacon.setListener(sensorEvtForwarder);
 
-            final EddystoneUIDBeacon eddystone = new EddystoneUIDBeacon(activity);
+            final EddystoneUIDBeacon eddystone = new EddystoneUIDBeacon(sensorDataInterface, activity);
             sensors.add(eddystone);
-            eddystone.setListener(sensorEvtForwarder);
         }
 
         if (config.hasDecawaveUWB) {
             DecawaveUWB.Config uwbConfig = new DecawaveUWB.Config();
             uwbConfig.tagMacAddress = config.decawaveUWBTagMacAddress;
-            DecawaveUWB sensorUWB = new DecawaveUWB(activity, uwbConfig);
+            DecawaveUWB sensorUWB = new DecawaveUWB(sensorDataInterface, activity, uwbConfig);
             sensors.add(sensorUWB);
-            sensorUWB.setListener(sensorEvtForwarder);
         }
 
         // fill sensorTypeMap for easier access

@@ -14,6 +14,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.VendorInformation;
 
@@ -55,7 +56,8 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 
 
 	/** ctor */
-    public PhoneSensors(final Activity act){
+    public PhoneSensors(SensorDataInterface sensorDataInterface, final Activity act){
+		super(sensorDataInterface);
 		// fetch the sensor manager from the activity
         sensorManager = (SensorManager) act.getSystemService(Context.SENSOR_SERVICE);
 
@@ -77,11 +79,11 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-		if(listener == null) { return; }
+		if(sensorDataInterface == null) { return; }
 		// to compare with the other orientation
 		if(event.sensor.getType() == Sensor.TYPE_ORIENTATION) {
 			// inform listeners
-			listener.onData(SensorType.ORIENTATION_OLD, event.timestamp,
+			sensorDataInterface.onData(event.timestamp, SensorType.ORIENTATION_OLD,
 				Float.toString(event.values[0]) + ";" +
 				Float.toString(event.values[1]) + ";" +
 				Float.toString(event.values[2])
@@ -99,30 +101,30 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 //		}
 		else if(event.sensor.getType() == Sensor.TYPE_LIGHT) {
 			// inform listeners
-			listener.onData(SensorType.LIGHT, event.timestamp,
+			sensorDataInterface.onData(event.timestamp, SensorType.LIGHT,
 					Float.toString(event.values[0])
 			);
 		} else if(event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
 			// inform listeners
-			listener.onData(SensorType.AMBIENT_TEMPERATURE, event.timestamp,
+			sensorDataInterface.onData(event.timestamp, SensorType.AMBIENT_TEMPERATURE,
 					Float.toString(event.values[0])
 			);
 		} else if(event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
 			// inform listeners
-			listener.onData(SensorType.RELATIVE_HUMIDITY, event.timestamp,
+			sensorDataInterface.onData(event.timestamp, SensorType.RELATIVE_HUMIDITY,
 					Float.toString(event.values[0])
 			);
 		} else if(event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
 			// inform listeners
 			if(event.values.length > 3){
-				listener.onData(SensorType.ROTATION_VECTOR, event.timestamp,
+				sensorDataInterface.onData(event.timestamp, SensorType.ROTATION_VECTOR,
 						Float.toString(event.values[0]) + ";" +
 						Float.toString(event.values[1]) + ";" +
 						Float.toString(event.values[2]) + ";" +
 						Float.toString(event.values[3])
 				);
 			} else {
-				listener.onData(SensorType.ROTATION_VECTOR, event.timestamp,
+				sensorDataInterface.onData(event.timestamp, SensorType.ROTATION_VECTOR,
 						Float.toString(event.values[0]) + ";" +
 						Float.toString(event.values[1]) + ";" +
 						Float.toString(event.values[2])
@@ -130,33 +132,33 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 			}
 		} else if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
 			// inform listeners
-			listener.onData(SensorType.GYROSCOPE, event.timestamp,
+			sensorDataInterface.onData(event.timestamp, SensorType.GYROSCOPE,
 				Float.toString(event.values[0]) + ";" +
 				Float.toString(event.values[1]) + ";" +
 				Float.toString(event.values[2])
 			);
 		} else if(event.sensor.getType() == Sensor.TYPE_PRESSURE) {
 			// inform listeners
-			listener.onData(SensorType.PRESSURE, event.timestamp,
+			sensorDataInterface.onData(event.timestamp, SensorType.PRESSURE,
 				Float.toString(event.values[0])
 			);
 		} else if(event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
 			// inform listeners
-			listener.onData(SensorType.LINEAR_ACCELERATION, event.timestamp,
+			sensorDataInterface.onData(event.timestamp, SensorType.LINEAR_ACCELERATION,
 				Float.toString(event.values[0]) + ";" +
 				Float.toString(event.values[1]) + ";" +
 				Float.toString(event.values[2])
 			);
 		} else if(event.sensor.getType() == Sensor.TYPE_GRAVITY) {
 			// inform listeners
-			listener.onData(SensorType.GRAVITY, event.timestamp,
+			sensorDataInterface.onData(event.timestamp, SensorType.GRAVITY,
 					Float.toString(event.values[0]) + ";" +
 					Float.toString(event.values[1]) + ";" +
 					Float.toString(event.values[2])
 			);
         } else if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
 			// inform listeners
-			listener.onData(SensorType.ACCELEROMETER, event.timestamp,
+			sensorDataInterface.onData(event.timestamp, SensorType.ACCELEROMETER,
 				Float.toString(event.values[0]) + ";" +
 				Float.toString(event.values[1]) + ";" +
 				Float.toString(event.values[2])
@@ -169,7 +171,7 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 			//updateOrientation();
 		} else if(event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
 			// inform listeners
-			listener.onData(SensorType.MAGNETIC_FIELD, event.timestamp,
+			sensorDataInterface.onData(event.timestamp, SensorType.MAGNETIC_FIELD,
 					Float.toString(event.values[0]) + ";" +
 					Float.toString(event.values[1]) + ";" +
 					Float.toString(event.values[2])
@@ -183,7 +185,7 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 			updateOrientation(event.timestamp);
         } else if(event.sensor.getType() == Sensor.TYPE_GAME_ROTATION_VECTOR) {
         	// inform listeners
-			listener.onData(SensorType.GAME_ROTATION_VECTOR, event.timestamp,
+			sensorDataInterface.onData(event.timestamp, SensorType.GAME_ROTATION_VECTOR,
 					Float.toString(event.values[0]) + ";" +
 							Float.toString(event.values[1]) + ";" +
 							Float.toString(event.values[2])
@@ -213,10 +215,10 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 		SensorManager.getOrientation(R, orientationNew);
 
 		// inform listeners
-		if (listener != null) {
+		if (sensorDataInterface != null) {
 
 			// orientation vector
-			listener.onData(SensorType.ORIENTATION_NEW, timestamp,
+			sensorDataInterface.onData(timestamp, SensorType.ORIENTATION_NEW,
 				Float.toString(orientationNew[0]) + ";" +
 				Float.toString(orientationNew[1]) + ";" +
 				Float.toString(orientationNew[2])
@@ -235,7 +237,7 @@ public class PhoneSensors extends ASensor implements SensorEventListener {
 			sb.append(R[8]);
 
 			//Write the whole rotationMatrix R into the Listener.
-			listener.onData(SensorType.ROTATION_MATRIX, timestamp, sb.toString());
+			sensorDataInterface.onData(timestamp, SensorType.ROTATION_MATRIX, sb.toString());
 
 //				Float.toString(R[0]) + ";" +
 //				Float.toString(R[1]) + ";" +

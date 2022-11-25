@@ -18,6 +18,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.callback.profile.ProfileDataCallback;
@@ -250,7 +251,7 @@ public class DecawaveUWB extends ASensor {
 
                 boolean everything = stream.eof();  // debug helper
 
-                listener.onData(SensorType.DECAWAVE_UWB, timestamp, csv.toString());
+                sensorDataInterface.onData(timestamp, SensorType.DECAWAVE_UWB, csv.toString());
             }
 
             @Override
@@ -264,7 +265,8 @@ public class DecawaveUWB extends ASensor {
     private final BluetoothAdapter bluetoothAdapter;
     private final DecawaveManager decaManager;
 
-    public DecawaveUWB(final Activity act, Config config) {
+    public DecawaveUWB(SensorDataInterface sensorDataInterface, final Activity act, Config config) {
+        super(sensorDataInterface);
         this.config = config;
         BluetoothManager bluetoothManager = (BluetoothManager) act.getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();

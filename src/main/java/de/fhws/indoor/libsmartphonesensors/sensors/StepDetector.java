@@ -10,6 +10,7 @@ import android.hardware.SensorManager;
 import java.util.Arrays;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.math.Vec3;
 
@@ -57,7 +58,8 @@ public class StepDetector extends ASensor implements SensorEventListener {
     private Sensor accelerometerSensor;
     private DoubleHysteresisStepDetector stepDetector = new DoubleHysteresisStepDetector();
 
-    public StepDetector(Activity activity) {
+    public StepDetector(SensorDataInterface sensorDataInterface, Activity activity) {
+        super(sensorDataInterface);
         this.sensorManager = (SensorManager) activity.getSystemService(Context.SENSOR_SERVICE);
         this.gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         this.accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -178,7 +180,7 @@ public class StepDetector extends ASensor implements SensorEventListener {
                     long centerTimestamp = (timestamp + lowerRegionStart) / 2;
 
                     // detected step, take start and end timestamp, and send StepDetector event
-                    listener.onData(SensorType.STEP_DETECTOR, timestamp, lowerRegionStart.toString() + ";" + timestamp + ";1.0");
+                    sensorDataInterface.onData(timestamp, SensorType.STEP_DETECTOR, lowerRegionStart.toString() + ";" + timestamp + ";1.0");
                     lowerRegionStart = null;
                     upperRegionStart = null;
                     upperRegionEnd = null;

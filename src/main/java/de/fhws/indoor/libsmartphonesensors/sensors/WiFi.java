@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
 
@@ -20,7 +21,8 @@ public class WiFi extends ASensor implements WifiScanProvider.WifiScanCallback {
 	private final WifiScanProvider wifiScanProvider;
 	private AtomicLong scanResultCnt = new AtomicLong(0);
 
-	public WiFi(WifiScanProvider wifiScanProvider) {
+	public WiFi(SensorDataInterface sensorDataInterface, WifiScanProvider wifiScanProvider) {
+		super(sensorDataInterface);
 		this.wifiScanProvider = wifiScanProvider;
 	}
 
@@ -44,7 +46,7 @@ public class WiFi extends ASensor implements WifiScanProvider.WifiScanCallback {
 			sb.append(Helper.stripMAC(sr.BSSID)).append(';');
 			sb.append(sr.frequency).append(';');
 			sb.append(sr.level);
-			listener.onData(SensorType.WIFI, sr.timestamp * 1000, sb.toString());
+			sensorDataInterface.onData(sr.timestamp * 1000, SensorType.WIFI, sb.toString());
 			sb.setLength(0);
 		}
 	}

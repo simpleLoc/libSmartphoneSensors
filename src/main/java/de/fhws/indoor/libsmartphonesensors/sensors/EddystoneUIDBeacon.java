@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 
 /**
@@ -50,7 +51,8 @@ public class EddystoneUIDBeacon extends ASensor {
     }
 
     // ctor
-    public EddystoneUIDBeacon(final Activity act) {
+    public EddystoneUIDBeacon(SensorDataInterface sensorDataInterface, final Activity act) {
+        super(sensorDataInterface);
         this.activity = act;
         initializeBluetooth();
     }
@@ -122,8 +124,8 @@ public class EddystoneUIDBeacon extends ASensor {
         UUID uuid = new UUID(uuidHigh, uuidLow);
 
         // For EddystoneUID layout, see: https://github.com/google/eddystone/tree/master/eddystone-uid
-        if(listener != null) {
-            listener.onData(SensorType.EDDYSTONE_UID, advertisement.getTimestampNanos(), Helper.stripMAC(advertisement.getDevice().getAddress()) + ";"
+        if(sensorDataInterface != null) {
+            sensorDataInterface.onData(advertisement.getTimestampNanos(), SensorType.EDDYSTONE_UID, Helper.stripMAC(advertisement.getDevice().getAddress()) + ";"
                     + advertisement.getRssi() + ";"
                     + advertisement.getScanRecord().getTxPowerLevel() + ";"
                     + uuid.toString());

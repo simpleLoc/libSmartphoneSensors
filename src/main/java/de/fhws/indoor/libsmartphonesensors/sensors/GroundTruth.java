@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.os.SystemClock;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 
 /**
@@ -15,19 +16,20 @@ import de.fhws.indoor.libsmartphonesensors.SensorType;
  */
 public class GroundTruth extends ASensor {
 
-    public GroundTruth(final Activity act){
+    public GroundTruth(SensorDataInterface sensorDataInterface, final Activity act) {
+        super(sensorDataInterface);
         //empty as my soul
     }
 
     public void writeGroundTruth(final int groundTruthCounter, long ts){
-        if (listener != null){
-            listener.onData(SensorType.GROUND_TRUTH, ts, Integer.toString(groundTruthCounter));
+        if (sensorDataInterface != null){
+            sensorDataInterface.onData(ts, SensorType.GROUND_TRUTH, Integer.toString(groundTruthCounter));
         }
     }
 
     public void writeInitData(int pathID, int numGroundTruthPoints, long ts){
-        if (listener != null){
-            listener.onData(SensorType.GROUND_TRUTH_PATH, ts, Integer.toString(pathID) + ";" + Integer.toString(numGroundTruthPoints));
+        if (sensorDataInterface != null){
+            sensorDataInterface.onData(ts, SensorType.GROUND_TRUTH_PATH, Integer.toString(pathID) + ";" + Integer.toString(numGroundTruthPoints));
         }
     }
 

@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static android.content.ContentValues.TAG;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 
 /**
@@ -43,7 +44,8 @@ public class GpsNew extends ASensor implements ConnectionCallbacks, OnConnection
 
     protected String mLastUpdateTime;
 
-    public GpsNew(Activity act) {
+    public GpsNew(SensorDataInterface sensorDataInterface, Activity act) {
+        super(sensorDataInterface);
         this.act = act;
         this.mLastUpdateTime = "";
 
@@ -150,8 +152,8 @@ public class GpsNew extends ASensor implements ConnectionCallbacks, OnConnection
             mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
 
             // inform listeners
-            if (listener != null){
-                listener.onData(SensorType.GPS, location.getElapsedRealtimeNanos(), //TODO: Is this correct? SystemClock.elapsedRealtimeNanos() otherwise..
+            if (sensorDataInterface != null){
+                sensorDataInterface.onData(location.getElapsedRealtimeNanos(), SensorType.GPS,
                         Double.toString(location.getLatitude()) + ";" +
                                 Double.toString(location.getLongitude()) + ";" +
                                 Double.toString(location.getAltitude()) + ";" +

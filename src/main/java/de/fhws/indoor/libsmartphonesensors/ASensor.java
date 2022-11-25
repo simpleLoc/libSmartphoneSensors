@@ -10,24 +10,16 @@ import android.app.Activity;
  */
 public abstract class ASensor {
 
-	/** listen for sensor events */
-	public interface SensorListener {
+	protected SensorDataInterface sensorDataInterface = null;
 
-		/** received data from the given sensor */
-        void onData(final SensorType id, final long timestamp, final String csv);
-
+	public ASensor(SensorDataInterface sensorDataInterface) {
+		this.sensorDataInterface = sensorDataInterface;
 	}
-
-	/** the listener to inform (if any) */
-	protected SensorListener listener = null;
 
 	/** start the sensor */
     public abstract void onResume(final Activity act);
 
 	/** stop the sensor */
 	public abstract void onPause(final Activity act);
-
-	/** attach the given listener to the sensor */
-	public void setListener(final SensorListener listener) {this.listener = listener;}
 
 }

@@ -13,6 +13,7 @@ import android.os.Bundle;
 import androidx.core.content.ContextCompat;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 
 /**
@@ -25,8 +26,8 @@ public class Gps extends ASensor implements LocationListener {
     private LocationManager locationManager;
     private Location location;
 
-    public Gps(Activity act) throws Exception {
-
+    public Gps(SensorDataInterface sensorDataInterface, Activity act) throws Exception {
+        super(sensorDataInterface);
         this.act = act;
         initGPS();
 
@@ -91,8 +92,8 @@ public class Gps extends ASensor implements LocationListener {
         this.location = location;
 
         // inform listeners
-        if (listener != null){
-            listener.onData(SensorType.GRAVITY, location.getElapsedRealtimeNanos(), //TODO: Is this correct? SystemClock.elapsedRealtimeNanos() otherwise..
+        if (sensorDataInterface != null){
+            sensorDataInterface.onData(location.getElapsedRealtimeNanos(), SensorType.GRAVITY,
                     Double.toString(location.getLatitude()) + ";" +
                     Double.toString(location.getLongitude()) + ";" +
                     Double.toString(location.getAltitude()) + ";" +

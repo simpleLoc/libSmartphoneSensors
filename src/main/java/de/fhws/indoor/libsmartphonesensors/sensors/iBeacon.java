@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.VendorInformation;
 
@@ -35,7 +36,8 @@ public class iBeacon extends ASensor {
 	private ScanCallback mLeScanCallback;
 
 	// ctor
-	public iBeacon(final Activity act) {
+	public iBeacon(SensorDataInterface sensorDataInterface, final Activity act) {
+		super(sensorDataInterface);
 
 		// sanity check
 		if (!act.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
@@ -62,10 +64,10 @@ public class iBeacon extends ASensor {
 		// and attach the callback
 		mLeScanCallback = new ScanCallback() {
 			@Override public void onScanResult(int callbackType, android.bluetooth.le.ScanResult result) {
-				//Log.d("BT", device + " " + rssi);
-				if (listener != null) {
-					listener.onData(SensorType.IBEACON, result.getTimestampNanos(), Helper.stripMAC(result.getDevice().getAddress()) + ";" + result.getRssi() + ";" + result.getScanRecord().getTxPowerLevel());
-				}
+			//Log.d("BT", device + " " + rssi);
+			if (sensorDataInterface != null) {
+				sensorDataInterface.onData(result.getTimestampNanos(), SensorType.IBEACON, Helper.stripMAC(result.getDevice().getAddress()) + ";" + result.getRssi() + ";" + result.getScanRecord().getTxPowerLevel());
+			}
 			}
 		};
 

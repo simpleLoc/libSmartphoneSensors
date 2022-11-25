@@ -8,6 +8,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.math.MadgwickFilter;
 import de.fhws.indoor.libsmartphonesensors.math.Vec3;
@@ -32,7 +33,8 @@ public class HeadingChange extends ASensor implements SensorEventListener {
     private Vec3 lastGyro = new Vec3();
 
     /** ctor */
-    public HeadingChange(final Activity act){
+    public HeadingChange(SensorDataInterface sensorDataInterface, final Activity act){
+        super(sensorDataInterface);
         // fetch the sensor manager from the activity
         sensorManager = (SensorManager) act.getSystemService(Context.SENSOR_SERVICE);
 
@@ -58,8 +60,8 @@ public class HeadingChange extends ASensor implements SensorEventListener {
                 madgwickFilter.calculcate(timeStep, lastAccel, lastGyro);
                 Vec3 alignedGyro = madgwickFilter.getQuaternion().transformVector(lastGyro);
                 double headingChange = alignedGyro.z * timeStepFactor;
-                if(this.listener != null) {
-                    this.listener.onData(SensorType.HEADING_CHANGE, event.timestamp, Double.toString(headingChange));
+                if(sensorDataInterface != null) {
+                    sensorDataInterface.onData(event.timestamp, SensorType.HEADING_CHANGE, Double.toString(headingChange));
                 }
             }
             lastUpdateTs = event.timestamp;
