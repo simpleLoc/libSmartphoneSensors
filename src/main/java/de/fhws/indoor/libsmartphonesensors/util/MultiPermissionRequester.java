@@ -24,12 +24,21 @@ public class MultiPermissionRequester {
 
     private final ActivityResultContracts.RequestPermission requestPermissionContract;
     private ActivityResultLauncher<String> permissionRequestLauncher;
+    private SuccessListener successListener;
+    
+    public static interface SuccessListener {
+        void onFinished();
+    }
 
     public MultiPermissionRequester(AppCompatActivity activity) {
         this.activity = activity;
         this.requestPermissionContract = new ActivityResultContracts.RequestPermission();
     }
 
+    public void setSuccessListener(SuccessListener successListener) {
+        this.successListener = successListener;
+    }
+    
     public void requestLocationService() {
         shouldRequestLocationService = true;
     }
@@ -64,6 +73,9 @@ public class MultiPermissionRequester {
                     } else {
                         currentIdx += 1;
                         if(permsToRequest.size() == currentIdx) {
+                            if(successListener != null) {
+                                successListener.onFinished();
+                            }
                             return;
                         }
                         permissionRequestLauncher.launch(permsToRequest.get(currentIdx));
@@ -71,6 +83,10 @@ public class MultiPermissionRequester {
                 });
             });
             permissionRequestLauncher.launch(permsToRequest.get(currentIdx));
+        } else {
+            if(successListener != null) {
+                successListener.onFinished();
+            }
         }
     }
 
