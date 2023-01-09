@@ -57,6 +57,7 @@ public class StepDetector extends ASensor implements SensorEventListener {
     private Sensor gravitySensor;
     private Sensor accelerometerSensor;
     private DoubleHysteresisStepDetector stepDetector = new DoubleHysteresisStepDetector();
+    private long recordingStartTimestamp = 0;
 
     public StepDetector(SensorDataInterface sensorDataInterface, Activity activity) {
         super(sensorDataInterface);
@@ -180,7 +181,9 @@ public class StepDetector extends ASensor implements SensorEventListener {
                     long centerTimestamp = (timestamp + lowerRegionStart) / 2;
 
                     // detected step, take start and end timestamp, and send StepDetector event
-                    sensorDataInterface.onData(timestamp, SensorType.STEP_DETECTOR, lowerRegionStart.toString() + ";" + timestamp + ";1.0");
+                    sensorDataInterface.onData(timestamp, SensorType.STEP_DETECTOR,
+                            (lowerRegionStart - recordingStartTimestamp) + ";" + (timestamp - recordingStartTimestamp) + ";1.0"
+                    );
                     lowerRegionStart = null;
                     upperRegionStart = null;
                     upperRegionEnd = null;
@@ -237,6 +240,7 @@ public class StepDetector extends ASensor implements SensorEventListener {
     public void onResume(Activity act) {
         this.sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_FASTEST);
         this.sensorManager.registerListener(this, gravitySensor, SensorManager.SENSOR_DELAY_FASTEST);
+        recordingStartTimestamp = sensorDataInterface.getStartTimestamp();
     }
 
     @Override

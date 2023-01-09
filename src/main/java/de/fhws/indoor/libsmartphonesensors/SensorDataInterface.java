@@ -10,9 +10,21 @@ import java.io.OutputStream;
 public interface SensorDataInterface {
 
     /**
+     * Get this recording's timestamp offset.
+     * Timestamps written to the file need to be offset by the recording's start timestamp.
+     * This method can be helpful if a sensor event's data contains a timestamp that needs to be
+     * manually corrected by the sensor.
+     * @return This recording's start timestamp.
+     */
+    long getStartTimestamp();
+
+    /**
      * Called by Sensor to notify SensorDataInterface provider about new timestamped event
      * in the SensorReadout csv format.
      * @param timestamp Event timestamp
+     *                  WARNING: This is not what will be written to the file. This timestamp will
+     *                  be offset by this recording's start timestamp (this - startTimestamp), before
+     *                  writing it to the file.
      * @param id Event identifier (see SensorType)
      * @param csv csv data to append
      */
