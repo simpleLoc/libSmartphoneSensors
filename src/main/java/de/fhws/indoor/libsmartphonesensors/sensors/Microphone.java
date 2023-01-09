@@ -41,7 +41,7 @@ public class Microphone extends ASensor {
 
         // configure audio capture
         AudioFormat audioFormat = new AudioFormat.Builder()
-                .setEncoding(AudioFormat.ENCODING_PCM_32BIT)
+                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                 .build();
         audioRecord = new AudioRecord.Builder()
                 .setAudioFormat(audioFormat)
@@ -65,7 +65,7 @@ public class Microphone extends ASensor {
                     }
                     long bufferStartTs = timeBase.nanoTime - (timeBase.framePosition * 1000000000 / audioRecord.getSampleRate() / audioRecord.getChannelCount());
                     bufferStartTs = Math.max(0, bufferStartTs);
-                    String micMetadata = audioRecord.getChannelCount() + ";" + audioRecord.getSampleRate() + ";s32le";
+                    String micMetadata = audioRecord.getChannelCount() + ";" + audioRecord.getSampleRate() + ";s16le";
                     sensorDataInterface.onData(bufferStartTs, SensorType.MICROPHONE_METADATA, micMetadata);
                 }
                 try {
