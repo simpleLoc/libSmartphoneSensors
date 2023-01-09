@@ -238,6 +238,7 @@ public class StepDetector extends ASensor implements SensorEventListener {
 
     @Override
     public void onResume(Activity act) {
+        this.stepDetector = new DoubleHysteresisStepDetector();
         this.sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_FASTEST);
         this.sensorManager.registerListener(this, gravitySensor, SensorManager.SENSOR_DELAY_FASTEST);
         recordingStartTimestamp = sensorDataInterface.getStartTimestamp();
