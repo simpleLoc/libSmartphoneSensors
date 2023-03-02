@@ -12,6 +12,7 @@ import java.util.Arrays;
 import de.fhws.indoor.libsmartphonesensors.ASensor;
 import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
+import de.fhws.indoor.libsmartphonesensors.math.LinearResampler;
 import de.fhws.indoor.libsmartphonesensors.math.Vec3;
 
 /**
@@ -220,16 +221,31 @@ public class StepDetector extends ASensor implements SensorEventListener {
     // ###########
     // # EVENTS
     // ###########
-    Vec3 lastAccel = new Vec3();
-    Vec3 lastGravity = new Vec3();
+    Vec3 lastAccel = new Vec3(); long lastAccelTs = 0;
+    Vec3 lastGravity = new Vec3(); long lastGravityTs = 0;
+    LinearResampler accelResampler = new LinearResampler(3, SENSOR_HZ, 0);
+    LinearResampler gravityResampler = new LinearResampler(3, SENSOR_HZ, 0);
+
+    private void updateIfRequired() {
+        if(lastAccelTs == lastGravityTs) {
+            stepDetector.update(lastAccelTs, lastAccel, lastGravity);
+        }
+    }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
         if(event.sensor == this.accelerometerSensor) {
-            lastAccel.set(event.values[0], event.values[1], event.values[2]);
+            accelResampler.pushSample(event.timestamp, event.values, (timestampNs, sample) -> {
+                lastAccel = new Vec3(sample[0], sample[1], sample[2]);
+                lastAccelTs = timestampNs;
+                updateIfRequired();
+            });
         } else if(event.sensor == this.gravitySensor) {
-            lastGravity.set(event.values[0], event.values[1], event.values[2]);
-            stepDetector.update(event.timestamp, lastAccel, lastGravity);
+            gravityResampler.pushSample(event.timestamp, event.values, (timestampNs, sample) -> {
+                lastGravity = new Vec3(sample[0], sample[1], sample[2]);
+                lastGravityTs = timestampNs;
+                updateIfRequired();
+            });
         }
     }
 
