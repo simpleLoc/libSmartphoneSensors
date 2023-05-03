@@ -10,13 +10,13 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.wifi.rtt.RangingRequest;
 import android.os.Build;
 import android.widget.Toast;
 
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
 import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
@@ -29,11 +29,17 @@ import de.fhws.indoor.libsmartphonesensors.VendorInformation;
  */
 public class iBeacon extends ASensor {
 
+	// automatically restart ble scan every 25 minutes
+	// this is because android automatically stops (down-prioritizes) the scan after ~30mins
+	private static final long RESTART_INTERVAL_MSEC = 25 * 60 * 1000;
+
 	private BluetoothAdapter bt;
 	private BluetoothLeScanner scanner;
 	private static ScanSettings settings;
 	private static final int REQUEST_ENABLE_BT = 1;
 	private ScanCallback mLeScanCallback;
+	private final Timer restartTimer = new Timer();
+	private TimerTask restartTask;
 
 	// ctor
 	public iBeacon(SensorDataInterface sensorDataInterface, final Activity act) {
@@ -77,6 +83,16 @@ public class iBeacon extends ASensor {
 				//.setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT) //comment this out for apk < 23
 				.build();
 
+		restartTask = new TimerTask() {
+			@Override
+			public void run() {
+				try {
+					scanner.stopScan(mLeScanCallback);
+				} catch(Exception e) {}
+				List<ScanFilter> filters = new ArrayList<ScanFilter>();
+				scanner.startScan(filters, settings, mLeScanCallback);
+			}
+		};
 	}
 
 	private void enableBT(final Activity act) {
@@ -90,14 +106,13 @@ public class iBeacon extends ASensor {
 	@Override public void onResume(final Activity act) {
 		if (bt != null) {
 			enableBT(act);
-			List<ScanFilter> filters = new ArrayList<ScanFilter>();
-			scanner.startScan(filters, settings, mLeScanCallback);
-			//scanner.startScan(mLeScanCallback);
+			restartTimer.schedule(restartTask, 0, RESTART_INTERVAL_MSEC);
 		}
 	}
 
 	@Override public void onPause(final Activity act) {
 		if (bt != null) {
+			restartTask.cancel();
 			scanner.stopScan(mLeScanCallback);
 		}
 	}
