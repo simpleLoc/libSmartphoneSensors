@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="5dip"
+    android:layout_marginEnd="5dip"
+    android:columnCount="5"
+    android:rowCount="2">
+
+        <TextView
+            android:id="@+id/lblCntWifi"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="Wifi"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:id="@+id/lblCntWifiRTT"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="FTM"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:id="@+id/lblCntBeacon"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="BLE"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:id="@+id/lblCntUWB"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="UWB"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:id="@+id/lblCntGPS"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="GPS"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:id="@+id/txtEvtCntWifi"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="-"
+            android:textColor="#ffffff"
+            android:textSize="10dp" />
+
+        <TextView
+            android:id="@+id/txtEvtCntFTM"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="-"
+            android:textColor="#ffffff"
+            android:textSize="10dp" />
+
+        <TextView
+            android:id="@+id/txtEvtCntBLE"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="-"
+            android:textColor="#ffffff"
+            android:textSize="10dp" />
+
+        <TextView
+            android:id="@+id/txtEvtCntUWB"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="-"
+            android:textColor="#ffffff"
+            android:textSize="10dp" />
+
+        <TextView
+            android:id="@+id/txtEvtCntGPS"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="-"
+            android:textColor="#ffffff"
+            android:textSize="10dp" />
+
+</GridLayout>
