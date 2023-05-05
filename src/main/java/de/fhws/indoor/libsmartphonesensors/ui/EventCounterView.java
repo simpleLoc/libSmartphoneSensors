@@ -7,6 +7,7 @@ import android.widget.GridLayout;
 import android.widget.TextView;
 
 import de.fhws.indoor.libsmartphonesensors.R;
+import de.fhws.indoor.libsmartphonesensors.sensors.DecawaveUWB;
 
 public class EventCounterView extends GridLayout {
 
@@ -14,7 +15,14 @@ public class EventCounterView extends GridLayout {
         NONE,
         CONNECTING,
         CONNECTED,
-        CONNECTING_FAILED
+        CONNECTING_FAILED;
+
+        public static UWBState from(DecawaveUWB sensorUWB) {
+            if(sensorUWB == null) { return EventCounterView.UWBState.NONE; }
+            if(sensorUWB.isConnectedToTag()) { return EventCounterView.UWBState.CONNECTED; }
+            else if(sensorUWB.isCurrentlyConnecting()) { return EventCounterView.UWBState.CONNECTING; }
+            else { return EventCounterView.UWBState.CONNECTING_FAILED; }
+        }
     }
 
     public static class CounterData {
