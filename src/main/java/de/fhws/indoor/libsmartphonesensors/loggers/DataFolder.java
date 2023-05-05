@@ -32,7 +32,7 @@ public class DataFolder {
         if (isOK(folder)) {return;}
 
         // 3) try internal data folder
-        folder = new File(context.getApplicationInfo().dataDir);
+        folder = context.getFilesDir();
         if (isOK(folder)) {return;}
 
         // all failed

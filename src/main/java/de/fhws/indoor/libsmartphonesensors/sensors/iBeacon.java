@@ -82,17 +82,6 @@ public class iBeacon extends ASensor {
 				.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
 				//.setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT) //comment this out for apk < 23
 				.build();
-
-		restartTask = new TimerTask() {
-			@Override
-			public void run() {
-				try {
-					scanner.stopScan(mLeScanCallback);
-				} catch(Exception e) {}
-				List<ScanFilter> filters = new ArrayList<ScanFilter>();
-				scanner.startScan(filters, settings, mLeScanCallback);
-			}
-		};
 	}
 
 	private void enableBT(final Activity act) {
@@ -106,6 +95,16 @@ public class iBeacon extends ASensor {
 	@Override public void onResume(final Activity act) {
 		if (bt != null) {
 			enableBT(act);
+			restartTask = new TimerTask() {
+				@Override
+				public void run() {
+					try {
+						scanner.stopScan(mLeScanCallback);
+					} catch(Exception e) {}
+					List<ScanFilter> filters = new ArrayList<ScanFilter>();
+					scanner.startScan(filters, settings, mLeScanCallback);
+				}
+			};
 			restartTimer.schedule(restartTask, 0, RESTART_INTERVAL_MSEC);
 		}
 	}
