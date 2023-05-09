@@ -87,7 +87,7 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         private static long MEASURE_INTERVAL_FACTOR_FAST = 1;
 
         ScanConfig scanConfig;
-        private HashMap<String, ScheduledMeasurement> plannedMeasurements = new HashMap<>();
+        private final HashMap<String, ScheduledMeasurement> plannedMeasurements = new HashMap<>();
         private ArrayList<ScheduledMeasurement> scanQueue = new ArrayList<>();
 
         public ScanPlan(ScanConfig scanConfig) {
@@ -226,15 +226,13 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
     @SuppressLint("MissingPermission")
     @RequiresApi(api = Build.VERSION_CODES.P)
     private void startRanging() {
-        if(rangingRunning.get() == false) { return; }
+        if(!rangingRunning.get()) { return; }
 
         RangingRequest.Builder builder = new RangingRequest.Builder();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             builder.setRttBurstSize((scanConfig.ftmBurstSize == 0) ? RangingRequest.getDefaultRttBurstSize() : scanConfig.ftmBurstSize);
         }
-        int scanJobCnt = scanPlan.iterateNextNPlanned(RangingRequest.getMaxPeers(), (ScanResult sr) -> {
-            builder.addAccessPoint(sr);
-        });
+        int scanJobCnt = scanPlan.iterateNextNPlanned(RangingRequest.getMaxPeers(), builder::addAccessPoint);
 
         if(scanJobCnt == 0) {
             // retry later
@@ -261,7 +259,7 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     private void queueNextDelayedRangingRequest() {
-        delayNextMeasurementHandler.postDelayed(() -> startRanging(), this.scanConfig.rangingIntervalMSec);
+        delayNextMeasurementHandler.postDelayed(this::startRanging, this.scanConfig.rangingIntervalMSec);
     }
 
     // result callback
@@ -270,14 +268,14 @@ public class WiFiRTTScan extends ASensor implements WifiScanProvider.WifiScanCal
         @Override
         public void onRangingFailure(final int i) {
             //emitter.onError(new RuntimeException("The WiFi-Ranging failed with error code: " + i));
-            Log.d(TAG, "onRangingFailure: " + i);
+            Log.w(TAG, "onRangingFailure: " + i);
             scanConfig.rangingIntervalMSec += 50; // ranging failed, increase ranging delay by 50ms
             queueNextDelayedRangingRequest();
         }
 
         @Override
         public void onRangingResults(final List<RangingResult> list) {
-            if(rangingRunning.get() == false) { return; }
+            if(!rangingRunning.get()) { return; }
             // ranging worked, decrease delay ranging by 10ms
             scanConfig.rangingIntervalMSec = Math.max(scanConfig.rangingIntervalMSec - 10, scanConfig.minRangingIntervalMSec);
             queueNextDelayedRangingRequest();
