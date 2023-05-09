@@ -78,10 +78,14 @@ public class EventCounterView extends GridLayout {
 
     public void updateActiveData(boolean raiseEvent, ConsumeActiveDataFn updateFn) {
         updateFn.update(activeData);
-        updateActiveUi();
         if(raiseEvent && activeDataChangedCallback != null)  {
             activeDataChangedCallback.update(activeData);
         }
+        updateActiveUi();
+    }
+
+    public void setActiveDataChangedCallback(ConsumeActiveDataFn activeDataChangedCallback) {
+        this.activeDataChangedCallback = activeDataChangedCallback;
     }
 
     public void setClickable(boolean clickable) {
@@ -149,9 +153,9 @@ public class EventCounterView extends GridLayout {
     }
     private int boolToColor(boolean status) {
         if(status) {
-            return getResources().getColor(R.color.design_default_color_on_primary);
+            return getResources().getColor(R.color.event_counter_active);
         } else {
-            return getResources().getColor(R.color.design_default_color_error);
+            return getResources().getColor(R.color.event_counter_inactive);
         }
     }
 }
