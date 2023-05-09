@@ -1,98 +1,123 @@
 package de.fhws.indoor.libsmartphonesensors.util;
 
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Application;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.os.Bundle;
 import android.provider.Settings;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.Lifecycle;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 
 import de.fhws.indoor.libsmartphonesensors.R;
 
 public class MultiPermissionRequester {
 
-    private static final ArrayList<String> permsToRequest = new ArrayList<>();
+    private static Object syncObj = new Object();
+    private static MultiPermissionRequester instance = null;
 
-    private final AppCompatActivity activity;
-    private final HashSet<String> permissions = new HashSet<>();
+    private AppCompatActivity activity;
+    private final ArrayList<String> permissionsRequired = new ArrayList<>();
     private boolean shouldRequestLocationService = false;
 
-    private final ActivityResultContracts.RequestPermission requestPermissionContract;
-    private ActivityResultLauncher<String> permissionRequestLauncher;
+    private final ArrayList<String> permissionsToRequest = new ArrayList<>();
+    private final ActivityResultContracts.RequestMultiplePermissions requestPermissionContract;
+    private ActivityResultLauncher<String[]> permissionRequestLauncher;
     private SuccessListener successListener;
-    
+
     public static interface SuccessListener {
         void onFinished();
     }
 
-    public MultiPermissionRequester(AppCompatActivity activity) {
-        this.activity = activity;
+    public static void init(AppCompatActivity activity) {
         if(activity.getLifecycle().getCurrentState() != Lifecycle.State.INITIALIZED) {
-            throw new RuntimeException("MultiPermissionRequester has to be instantiated before onCreate()");
+            throw new RuntimeException("Call MultiPermissionRequester::init() in onCreate() of Activity!");
         }
-        this.requestPermissionContract = new ActivityResultContracts.RequestPermission();
-        this.permissionRequestLauncher = activity.registerForActivityResult(requestPermissionContract, granted -> {
-            activity.runOnUiThread(() -> {
-                if(granted == false) { // try again
-                    permissionRequestLauncher.launch(permsToRequest.get(0));
+        synchronized (syncObj) {
+            if(instance != null) { instance.unregister(); }
+            instance = null;
+            instance = new MultiPermissionRequester(activity);
+        }
+    }
+
+    public static MultiPermissionRequester get() {
+        synchronized (syncObj) {
+            if(instance == null) { throw new RuntimeException("Forgot to call init() in Activity!"); }
+            return instance;
+        }
+    }
+
+    private MultiPermissionRequester(AppCompatActivity activity) {
+        this.activity = activity;
+        this.requestPermissionContract = new ActivityResultContracts.RequestMultiplePermissions();
+        this.permissionRequestLauncher = activity.registerForActivityResult(requestPermissionContract, granteds -> {
+            if(granteds.isEmpty()) { return; }
+
+            int idx = 0; while(idx < permissionsToRequest.size()) {
+                String perm = permissionsToRequest.get(idx);
+                if(granteds.get(perm)) { permissionsToRequest.remove(idx); }
+                else { idx += 1; }
+            }
+
+            boolean shittyDialogRequired = false;
+            for(String perm : granteds.keySet()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if(activity.shouldShowRequestPermissionRationale(perm)) { shittyDialogRequired = true; }
                 } else {
-                    if(permsToRequest.size() > 0) { permsToRequest.remove(0); }
-                    if(permsToRequest.size() == 0) {
-                        if(successListener != null) {
-                            successListener.onFinished();
-                        }
-                        return;
-                    }
-                    permissionRequestLauncher.launch(permsToRequest.get(0));
+                    shittyDialogRequired = true;
                 }
-            });
+            }
+            if(shittyDialogRequired) {
+                new AlertDialog.Builder(activity)
+                        .setTitle("Permissions required")
+                        .setMessage("All Permissions are required for the app to work. If they are denied, the app will exit.")
+                        .setCancelable(false)
+                        .setPositiveButton("Request Again", (a, b) -> { permissionRequestLauncher.launch(permissionsToRequest.toArray(new String[]{})); })
+                        .setNegativeButton("Close", (a, b) -> {
+                            Toast.makeText(activity, "Required permission was denied, app won't work!", Toast.LENGTH_LONG).show();
+                            activity.finishAffinity();
+                        })
+                        .create()
+                        .show();
+            } else {
+                if(granteds.containsValue(false)) { // some permission denied, try again
+                    Toast.makeText(activity, "Required permission was denied, app won't work!", Toast.LENGTH_LONG).show();
+                    activity.finishAffinity();
+                } else { // succeeded
+                    if(this.successListener != null) {
+                        this.successListener.onFinished();
+                        this.successListener = null;
+                    }
+                }
+            }
         });
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            activity.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
-                @Override public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {}
-                @Override public void onActivityStarted(@NonNull Activity activity) {}
-                @Override public void onActivityResumed(@NonNull Activity activity) {}
-                @Override public void onActivityPaused(@NonNull Activity activity) {}
-                @Override public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {}
-                @Override public void onActivityDestroyed(@NonNull Activity activity) {}
+    }
 
-                @Override
-                public void onActivityStopped(@NonNull Activity activity) {
-                    if(permissionRequestLauncher != null) {
-                        permissionRequestLauncher.unregister();
-                        permissionRequestLauncher = null;
-                    }
-                }
-            });
+    private void unregister() {
+        if(permissionRequestLauncher != null) {
+            permissionRequestLauncher.unregister();
+            permissionRequestLauncher = null;
         }
     }
 
-    public void setSuccessListener(SuccessListener successListener) {
-        this.successListener = successListener;
-    }
-    
     public void requestLocationService() {
         shouldRequestLocationService = true;
     }
 
     public void add(String permission) {
-        this.permissions.add(permission);
+        this.permissionsRequired.add(permission);
     }
 
-    public void launch() {
+    public synchronized void launch(SuccessListener successListener) {
+        if(this.successListener != null) { return; }
+        this.successListener = successListener;
+
         if(shouldRequestLocationService) {
             shouldRequestLocationService = false;
             new AlertDialog.Builder(activity)
@@ -103,18 +128,18 @@ public class MultiPermissionRequester {
             return;
         }
 
-        permsToRequest.clear();
-        for(String permission : permissions) {
+        for(String permission : permissionsRequired) {
             if(ContextCompat.checkSelfPermission(activity, permission) != PackageManager.PERMISSION_GRANTED) {
-                permsToRequest.add(permission);
+                permissionsToRequest.add(permission);
             }
         }
 
-        if(permsToRequest.size() > 0) {
-            permissionRequestLauncher.launch(permsToRequest.get(0));
+        if(permissionsToRequest.size() > 0) {
+            permissionRequestLauncher.launch(permissionsToRequest.toArray(new String[]{}));
         } else {
-            if(successListener != null) {
-                successListener.onFinished();
+            if(this.successListener != null) {
+                this.successListener.onFinished();
+                this.successListener = null;
             }
         }
     }
