@@ -28,7 +28,7 @@ import de.fhws.indoor.libsmartphonesensors.sensors.StepDetector;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFi;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
 import de.fhws.indoor.libsmartphonesensors.sensors.iBeacon;
-import de.fhws.indoor.libsmartphonesensors.util.MultiPermissionRequester;
+import de.fhws.indoor.libsmartphonesensors.util.permissions.IPermissionRequester;
 
 public class SensorManager {
     private boolean running = false;
@@ -68,12 +68,11 @@ public class SensorManager {
         return (T) sensors.get(idx);
     }
 
-    public void configure(AppCompatActivity activity, Config config) throws Exception {
+    public void configure(AppCompatActivity activity, Config config, IPermissionRequester permissionRequester) throws Exception {
         if(running == true) { throw new Exception("Can not reconfigure SensorManager while it is running"); }
         sensors.clear();
         sensorTypeMap.clear();
 
-        MultiPermissionRequester permissionRequester = MultiPermissionRequester.get();
         wifiScanProvider = new WifiScanProvider(activity, config.wifiScanIntervalMSec);
 
         // add sensors

@@ -15,7 +15,7 @@ import androidx.annotation.RequiresApi;
 
 import java.util.Optional;
 
-import de.fhws.indoor.libsmartphonesensors.util.MultiPermissionRequester;
+import de.fhws.indoor.libsmartphonesensors.util.permissions.IPermissionRequester;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class OneTimeBeaconSender {
@@ -25,7 +25,7 @@ public class OneTimeBeaconSender {
     private BluetoothLeAdvertiser advertiser;
     private AdvertisingSetCallback currentCallback;
 
-    private static void setup(MultiPermissionRequester permissionRequester) {
+    private static void setup(IPermissionRequester permissionRequester) {
         if(!initialized) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 permissionRequester.add(Manifest.permission.BLUETOOTH_ADVERTISE);
@@ -43,7 +43,7 @@ public class OneTimeBeaconSender {
         if(advertiser == null) { throw new UnsupportedOperationException(); }
     }
 
-    public OneTimeBeaconSender(MultiPermissionRequester permissionRequester) {
+    public OneTimeBeaconSender(IPermissionRequester permissionRequester) {
         setup(permissionRequester);
     }
 
