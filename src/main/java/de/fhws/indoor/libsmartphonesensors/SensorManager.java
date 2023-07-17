@@ -50,6 +50,25 @@ public class SensorManager {
         // ftm
         public long ftmRangingIntervalMSec;
         public int ftmBurstSize;
+
+        @Override
+        public String toString() {
+            return "Config{" +
+                    "hasGPS=" + hasGPS +
+                    ", hasWifi=" + hasWifi +
+                    ", hasWifiRTT=" + hasWifiRTT +
+                    ", hasBluetooth=" + hasBluetooth +
+                    ", hasPhone=" + hasPhone +
+                    ", hasHeadingChange=" + hasHeadingChange +
+                    ", hasStepDetector=" + hasStepDetector +
+                    ", hasDecawaveUWB=" + hasDecawaveUWB +
+                    ", hasMicrophone=" + hasMicrophone +
+                    ", decawaveUWBTagMacAddress='" + decawaveUWBTagMacAddress + '\'' +
+                    ", wifiScanIntervalMSec=" + wifiScanIntervalMSec +
+                    ", ftmRangingIntervalMSec=" + ftmRangingIntervalMSec +
+                    ", ftmBurstSize=" + ftmBurstSize +
+                    '}';
+        }
     }
 
     private ArrayList<ASensor> sensors = new ArrayList<>();
