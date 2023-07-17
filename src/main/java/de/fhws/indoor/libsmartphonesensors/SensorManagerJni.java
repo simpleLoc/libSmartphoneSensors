@@ -9,7 +9,9 @@ import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.Set;
 
+import de.fhws.indoor.libsmartphonesensors.util.permissions.AppCompatMultiPermissionRequester;
 import de.fhws.indoor.libsmartphonesensors.util.permissions.IPermissionRequester;
+import de.fhws.indoor.libsmartphonesensors.util.permissions.LocationServiceHelper;
 
 public class SensorManagerJni {
     private static Activity activity = null;
@@ -22,7 +24,9 @@ public class SensorManagerJni {
 
         @Override
         public synchronized void requestLocationService() {
-            requestLocation = true;
+            if(!LocationServiceHelper.isEnabled(activity)) {
+                requestLocation = true;
+            }
         }
 
         @Override

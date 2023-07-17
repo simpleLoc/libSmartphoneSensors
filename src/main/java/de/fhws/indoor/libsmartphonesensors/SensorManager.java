@@ -3,7 +3,6 @@ package de.fhws.indoor.libsmartphonesensors;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.location.LocationManager;
 import android.os.Build;
 
 import androidx.annotation.NonNull;
@@ -14,8 +13,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import de.fhws.indoor.libsmartphonesensors.helpers.BLEScanProvider;
 import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
 import de.fhws.indoor.libsmartphonesensors.io.VendorInformationSerializer;
+import de.fhws.indoor.libsmartphonesensors.sensors.BLE;
 import de.fhws.indoor.libsmartphonesensors.sensors.DecawaveUWB;
 import de.fhws.indoor.libsmartphonesensors.sensors.EddystoneUIDBeacon;
 import de.fhws.indoor.libsmartphonesensors.sensors.GpsNew;
@@ -26,12 +27,12 @@ import de.fhws.indoor.libsmartphonesensors.sensors.PhoneSensors;
 import de.fhws.indoor.libsmartphonesensors.sensors.StepDetector;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFi;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
-import de.fhws.indoor.libsmartphonesensors.sensors.iBeacon;
 import de.fhws.indoor.libsmartphonesensors.util.permissions.IPermissionRequester;
 
 public class SensorManager {
     private boolean running = false;
     private WifiScanProvider wifiScanProvider = null;
+    private BLEScanProvider bleScanProvider = null;
 
     public static class Config {
         public boolean hasGPS = false;
@@ -112,6 +113,7 @@ public class SensorManager {
         if(config.hasGPS) {
             permissionRequester.add(Manifest.permission.ACCESS_FINE_LOCATION);
             permissionRequester.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+            permissionRequester.requestLocationService();
             //log gps using sensor number 16
             final GpsNew gps = new GpsNew(sensorDataInterface, activity);
             sensors.add(gps);
@@ -128,38 +130,18 @@ public class SensorManager {
                     permissionRequester.add(Manifest.permission.NEARBY_WIFI_DEVICES);
                 }
                 final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(sensorDataInterface, activity, wifiScanProvider, config.ftmRangingIntervalMSec, config.ftmBurstSize);
-                sensors.add(wiFiRTTScan);
-                // log wifi RTT using sensor number 17
+                sensors.add(wiFiRTTScan); // log wifi RTT using sensor number 17
             }
         }
         if(config.hasBluetooth) {
-            // bluetooth permission
-            permissionRequester.add(Manifest.permission.ACCESS_FINE_LOCATION);
-            permissionRequester.add(Manifest.permission.BLUETOOTH_ADMIN);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                permissionRequester.add(Manifest.permission.BLUETOOTH_CONNECT);
-                permissionRequester.add(Manifest.permission.BLUETOOTH_SCAN);
-            }
-
-            LocationManager lm = (LocationManager)activity.getSystemService(Context.LOCATION_SERVICE);
-            boolean gps_enabled = false;
-            boolean network_enabled = false;
-            try {
-                gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
-            } catch(Exception ex) {}
-            try {
-                network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-            } catch(Exception ex) {}
-            if(!gps_enabled && !network_enabled) {
-                // notify user
-                permissionRequester.requestLocationService();
-            }
+            bleScanProvider = new BLEScanProvider(activity, permissionRequester);
+            permissionRequester.requestLocationService();
 
             // log iBeacons using sensor number 9
-            final iBeacon beacon = new iBeacon(sensorDataInterface, activity);
-            sensors.add(beacon);
+            final BLE ble = new BLE(sensorDataInterface, bleScanProvider);
+            sensors.add(ble);
 
-            final EddystoneUIDBeacon eddystone = new EddystoneUIDBeacon(sensorDataInterface, activity);
+            final EddystoneUIDBeacon eddystone = new EddystoneUIDBeacon(sensorDataInterface, bleScanProvider);
             sensors.add(eddystone);
         }
 
@@ -199,7 +181,7 @@ public class SensorManager {
         // sensor info
         PhoneSensors.dumpVendorInformation(androidSensorManager, vendorInformation);
         WiFiRTTScan.dumpVendorInformation(activity, vendorInformation);
-        iBeacon.dumpVendorInformation(activity, vendorInformation);
+        BLEScanProvider.dumpVendorInformation(activity, vendorInformation);
 
         VendorInformationSerializer.serialize(outputStream, vendorInformation);
         outputStream.flush();

@@ -26,7 +26,9 @@ public class AppCompatMultiPermissionRequester implements IPermissionRequester {
 
     @Override
     public void requestLocationService() {
-        MultiPermissionRequesterImpl.get().requestLocationService();
+        if(!LocationServiceHelper.isEnabled(MultiPermissionRequesterImpl.get().activity)) {
+            MultiPermissionRequesterImpl.get().requestLocationService();
+        }
     }
 
     @Override
