@@ -14,7 +14,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -42,6 +46,9 @@ public class BLEScanProvider {
     public interface BLEScanCallback {
         void onScanResult(ScanResult scanResult);
     };
+
+    @NonNull
+    protected final Handler mainLoopHandler = new Handler(Looper.getMainLooper());
 
     private Activity activity;
     private BluetoothAdapter bt;
@@ -155,8 +162,10 @@ public class BLEScanProvider {
                         try {
                             scanner.stopScan(mLeScanCallback);
                         } catch(Exception e) {}
-                        List<ScanFilter> filters = new ArrayList<ScanFilter>();
-                        scanner.startScan(filters, settings, mLeScanCallback);
+                        mainLoopHandler.post(() -> {
+                            List<ScanFilter> filters = new ArrayList<ScanFilter>();
+                            scanner.startScan(filters, settings, mLeScanCallback);
+                        });
                     }
                 };
                 restartTimer.schedule(restartTask, 0, RESTART_INTERVAL_MSEC);

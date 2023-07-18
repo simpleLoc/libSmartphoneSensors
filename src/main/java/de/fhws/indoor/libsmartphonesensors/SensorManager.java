@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Build;
+import android.os.PowerManager;
 
 import androidx.annotation.NonNull;
 
@@ -33,6 +34,7 @@ public class SensorManager {
     private boolean running = false;
     private WifiScanProvider wifiScanProvider = null;
     private BLEScanProvider bleScanProvider = null;
+    private PowerManager.WakeLock wakeLock = null;
 
     public static class Config {
         public boolean hasGPS = false;
@@ -91,6 +93,10 @@ public class SensorManager {
         if(running == true) { throw new Exception("Can not reconfigure SensorManager while it is running"); }
         sensors.clear();
         sensorTypeMap.clear();
+        if(wakeLock == null) {
+            PowerManager powerManager = (PowerManager) activity.getSystemService(Context.POWER_SERVICE);
+            wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "libSmartphoneSensors::WakeLock");
+        }
 
         wifiScanProvider = new WifiScanProvider(activity, config.wifiScanIntervalMSec);
 
@@ -190,6 +196,7 @@ public class SensorManager {
 
     public void start(Activity activity) throws Exception {
         if(running == true) { throw new Exception("SensorManager already running"); }
+        if(wakeLock != null) { wakeLock.acquire(); }
         for(ASensor sensor : sensors) {
             sensor.onResume(activity);
         }
@@ -202,6 +209,7 @@ public class SensorManager {
             sensor.onPause(activity);
         }
         running = false;
+        if(wakeLock != null) { wakeLock.release(); }
     }
 
 }
