@@ -5,6 +5,7 @@ package de.fhws.indoor.libsmartphonesensors.math;
  * This is basically an alternative implementation of GameRotationVector.
  */
 public class MadgwickFilter {
+    static double NS_TO_S_FACTOR = 1.0 / 1000000000.0;
     private double beta = 0;
     private Quaternion q = new Quaternion();
 
@@ -13,6 +14,15 @@ public class MadgwickFilter {
     }
     public Quaternion getQuaternion() { return q; }
 
+    public void fastStart(long timestampDeltaNs, Vec3 accel, Vec3 gyro) {
+        double beta = this.beta;
+
+        this.beta = beta / (timestampDeltaNs * NS_TO_S_FACTOR);
+
+        calculcate(timestampDeltaNs, accel, gyro);
+
+        this.beta = beta;
+    }
     public void calculcate(long timestampDeltaNs, Vec3 accel, Vec3 gyro) {
         double recipNorm;
         double s0, s1, s2, s3;
@@ -73,7 +83,7 @@ public class MadgwickFilter {
             qDot4 -= beta * s3;
         }
 
-        double timeStep = timestampDeltaNs / 1000000000.0;
+        double timeStep = timestampDeltaNs * NS_TO_S_FACTOR;
         // Integrate rate of change of quaternion to yield quaternion
         q.q[0] += qDot1 * timeStep;
         q.q[1] += qDot2 * timeStep;

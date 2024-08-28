@@ -6,6 +6,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.util.Log;
 
 import de.fhws.indoor.libsmartphonesensors.ASensor;
 import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
@@ -27,6 +28,7 @@ public class HeadingChange extends ASensor implements SensorEventListener {
 
     // internal heading estimation state
     private MadgwickFilter madgwickFilter = new MadgwickFilter(0.1);
+    private boolean madgwickInitialized = false;
     private Long lastUpdateTs = null;
     private int updatecnt = 0;
     private Vec3 lastAccel = new Vec3();
@@ -56,12 +58,21 @@ public class HeadingChange extends ASensor implements SensorEventListener {
             // calculate headingChange
             if(lastUpdateTs != null) {
                 long timeStep = (event.timestamp - lastUpdateTs);
-                double timeStepFactor = ((double) timeStep) / 1000000000;
-                madgwickFilter.calculcate(timeStep, lastAccel, lastGyro);
-                Vec3 alignedGyro = madgwickFilter.getQuaternion().transformVector(lastGyro);
-                double headingChange = alignedGyro.z * timeStepFactor;
-                if(sensorDataInterface != null) {
-                    sensorDataInterface.onData(event.timestamp, SensorType.HEADING_CHANGE, Double.toString(headingChange));
+                if (!madgwickInitialized) {
+                    madgwickFilter.fastStart(timeStep, lastAccel, lastGyro);
+                    madgwickInitialized = true;
+                    Log.d("Madgwick", String.format("fastStart: %d %f %f %f %f %f %f", timeStep, lastAccel.x, lastAccel.y, lastAccel.z, lastGyro.x, lastGyro.y, lastGyro.z));
+                } else {
+                    madgwickFilter.calculcate(timeStep, lastAccel, lastGyro);
+                    Log.d("Madgwick", String.format("update: %d %f %f %f %f %f %f", timeStep, lastAccel.x, lastAccel.y, lastAccel.z, lastGyro.x, lastGyro.y, lastGyro.z));
+                    Vec3 alignedGyro = madgwickFilter.getQuaternion().transformVector(lastGyro);
+                    Log.d("Madgwick", String.format("aligned: %f %f %f", alignedGyro.x, alignedGyro.y, alignedGyro.z));
+                    double timeStepFactor = ((double) timeStep) / 1000000000;
+                    double headingChange = alignedGyro.z * timeStepFactor;
+                    Log.d("Madgwick", String.format("change: %f", headingChange));
+                    if (sensorDataInterface != null) {
+                        sensorDataInterface.onData(event.timestamp, SensorType.HEADING_CHANGE, Double.toString(headingChange));
+                    }
                 }
             }
             lastUpdateTs = event.timestamp;
