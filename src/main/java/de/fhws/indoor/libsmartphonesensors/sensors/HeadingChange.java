@@ -61,15 +61,11 @@ public class HeadingChange extends ASensor implements SensorEventListener {
                 if (!madgwickInitialized) {
                     madgwickFilter.fastStart(timeStep, lastAccel, lastGyro);
                     madgwickInitialized = true;
-                    Log.d("Madgwick", String.format("fastStart: %d %f %f %f %f %f %f", timeStep, lastAccel.x, lastAccel.y, lastAccel.z, lastGyro.x, lastGyro.y, lastGyro.z));
                 } else {
                     madgwickFilter.calculcate(timeStep, lastAccel, lastGyro);
-                    Log.d("Madgwick", String.format("update: %d %f %f %f %f %f %f", timeStep, lastAccel.x, lastAccel.y, lastAccel.z, lastGyro.x, lastGyro.y, lastGyro.z));
                     Vec3 alignedGyro = madgwickFilter.getQuaternion().transformVector(lastGyro);
-                    Log.d("Madgwick", String.format("aligned: %f %f %f", alignedGyro.x, alignedGyro.y, alignedGyro.z));
                     double timeStepFactor = ((double) timeStep) / 1000000000;
                     double headingChange = alignedGyro.z * timeStepFactor;
-                    Log.d("Madgwick", String.format("change: %f", headingChange));
                     if (sensorDataInterface != null) {
                         sensorDataInterface.onData(event.timestamp, SensorType.HEADING_CHANGE, Double.toString(headingChange));
                     }
